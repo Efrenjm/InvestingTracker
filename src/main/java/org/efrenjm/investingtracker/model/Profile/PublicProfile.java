@@ -1,18 +1,15 @@
 package org.efrenjm.investingtracker.model.Profile;
 
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.*;
 import org.springframework.data.annotation.Id;
 import java.time.ZonedDateTime;
 
-
-@Getter @Setter
-@ToString
 @NoArgsConstructor
+@AllArgsConstructor
+@Getter
+@Setter
+@ToString
 public class PublicProfile {
-
     @Id
     private String id;
     private String username;

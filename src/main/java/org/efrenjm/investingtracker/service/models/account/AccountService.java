@@ -5,6 +5,13 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 public interface AccountService {
-    public Flux<Account> getAllAccounts();
-    public Mono<Account> getAccountById(String id);
+    Flux<Account> getAllAccounts();
+
+    Mono<Account> getAccountById(String id);
+
+    Mono<Account> createAccount(Account account);
+
+    Mono<Account> updateAccount(String id, Account account);
+
+    Mono<Void> deleteAccount(String id);
 }

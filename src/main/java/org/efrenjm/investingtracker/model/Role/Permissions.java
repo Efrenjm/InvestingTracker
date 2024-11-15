@@ -1,5 +1,13 @@
 package org.efrenjm.investingtracker.model.Role;
 
+import lombok.*;
+import org.springframework.data.mongodb.core.mapping.Document;
+
+@NoArgsConstructor
+@AllArgsConstructor
+@Getter
+@Setter
+@ToString
 public class Permissions {
     private Boolean createAccounts;
     private Boolean createTransactions;
