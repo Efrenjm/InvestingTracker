@@ -1,6 +1,6 @@
-package org.efrenjm.investingtracker.service;
+package org.efrenjm.investingtracker.service.models.account;
 
-import org.efrenjm.investingtracker.model.Account;
+import org.efrenjm.investingtracker.model.Account.Account;
 import org.efrenjm.investingtracker.repository.AccountRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -8,7 +8,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Service
-public class AccountService {
+public class AccountServiceImpl implements AccountService {
     @Autowired
     private AccountRepository accountRepository;
 

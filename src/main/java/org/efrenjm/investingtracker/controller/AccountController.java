@@ -1,7 +1,7 @@
 package org.efrenjm.investingtracker.controller;
 
-import org.efrenjm.investingtracker.model.Account;
-import org.efrenjm.investingtracker.service.AccountService;
+import org.efrenjm.investingtracker.model.Account.Account;
+import org.efrenjm.investingtracker.service.models.account.AccountServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -15,7 +15,7 @@ import reactor.core.publisher.Mono;
 public class AccountController {
 
     @Autowired
-    private AccountService accountService;
+    private AccountServiceImpl accountService;
 
     @GetMapping
     public Flux<Account> getAllAccounts() {
