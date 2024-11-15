@@ -1,9 +1,6 @@
 package org.efrenjm.investingtracker.model.Profile;
 
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.*;
 import org.efrenjm.investingtracker.model.Organization.Organization;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -11,13 +8,13 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import java.time.ZonedDateTime;
 import java.util.List;
 
+@NoArgsConstructor
+@AllArgsConstructor
 @Getter
 @Setter
 @ToString
-@NoArgsConstructor
 @Document(collection = "profiles")
 public class Profile {
-
     @Id
     private String id;
     private String username;

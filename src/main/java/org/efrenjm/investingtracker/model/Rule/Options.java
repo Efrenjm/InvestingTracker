@@ -1,18 +1,16 @@
 package org.efrenjm.investingtracker.model.Rule;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import org.efrenjm.investingtracker.model.Account.Account;
 
 import java.time.LocalDate;
 import java.util.List;
 
-@Getter
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Getter
+@Setter
+@ToString
 public class Options {
     private String type;
     private Boolean automatic;

@@ -1,8 +1,6 @@
 package org.efrenjm.investingtracker.model.Account;
 
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.*;
 import org.efrenjm.investingtracker.model.Organization.Organization;
 import org.efrenjm.investingtracker.model.Rule.Rule;
 import org.springframework.data.annotation.Id;
@@ -11,13 +9,15 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import java.time.ZonedDateTime;
 import java.util.List;
 
+@NoArgsConstructor
+@AllArgsConstructor
 @Getter
 @Setter
 @ToString
 @Document(collection = "accounts")
 public class Account {
     @Id
-    private String _id;
+    private String id;
     private Organization organization;
     private String name;
     private String type;

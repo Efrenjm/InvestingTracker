@@ -1,9 +1,6 @@
 package org.efrenjm.investingtracker.model.Rule;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import org.efrenjm.investingtracker.model.Organization.Organization;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -11,10 +8,11 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import java.time.ZonedDateTime;
 import java.util.List;
 
-@Getter
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Getter
+@Setter
+@ToString
 @Document(collection = "rules")
 public class Rule {
     @Id private String id;
