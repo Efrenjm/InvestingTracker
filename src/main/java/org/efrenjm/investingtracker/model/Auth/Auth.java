@@ -1,23 +1,32 @@
 package org.efrenjm.investingtracker.model.Auth;
 
 import lombok.*;
+import org.efrenjm.investingtracker.model.Profile.Profile;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 
-import java.util.List;
 
 
 @NoArgsConstructor
 @AllArgsConstructor
 @Setter
+@Getter
 @ToString
 @Document(collection = "auth")
 public class Auth {
     @Id
-    @Getter private String id;
-    @Getter private String username;
-    @Getter private String email;
-    @Getter private String phoneNumber;
+    @Field("_id")
+    private String id;
+
+    private String username;
+
+    private String email;
+
+    @Field("phone_number")
+    private String phoneNumber;
+
     private String password;
-    private List<Token> activeTokens;
+
+    private Profile profile;
 }

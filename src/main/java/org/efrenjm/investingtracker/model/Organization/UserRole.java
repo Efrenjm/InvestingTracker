@@ -11,5 +11,6 @@ import org.efrenjm.investingtracker.model.Role.Role;
 @ToString
 public class UserRole {
     private PublicProfile user;
+
     private Role role;
 }
