@@ -1,5 +1,6 @@
 package org.efrenjm.investingtracker.config;
 
+import lombok.NonNull;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -21,7 +22,8 @@ public class JwtAuthenticationFilter implements WebFilter {
 	}
 
 	@Override
-	public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
+	@NonNull
+	public Mono<Void> filter(ServerWebExchange exchange, @NonNull WebFilterChain chain) {
 		String token = extractToken(exchange.getRequest());
 
 		if (StringUtils.hasText(token) && jwtService.isTokenValid(token)) {

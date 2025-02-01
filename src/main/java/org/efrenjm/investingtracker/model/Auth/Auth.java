@@ -36,8 +36,9 @@ public class Auth implements UserDetails {
     private Set<GrantedAuthority> roles = new HashSet<GrantedAuthority>();
 
     @Builder
-    public Auth(String username, String password) {
-        this.username = username;
+    public Auth(String email, String phoneNumber, String password) {
+        this.email = email;
+        this.phoneNumber = phoneNumber;
         this.password = password;
         roles.add(new SimpleGrantedAuthority("ROLE_USER"));
     }
