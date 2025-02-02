@@ -6,11 +6,12 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
-import java.time.ZonedDateTime;
+import java.util.Date;
 import java.util.List;
 
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 @Getter
 @Setter
 @ToString
@@ -44,13 +45,13 @@ public class Profile {
     private Boolean active;
 
     @Field("created_at")
-    private ZonedDateTime createdAt;
+    private Date createdAt;
 
     @Field("updated_at")
-    private ZonedDateTime updatedAt;
+    private Date updatedAt;
 
     @Field("last_login")
-    private ZonedDateTime lastLogin;
+    private Date lastLogin;
 
-    private List<PublicProfile> friends;
+    private List<Profile> friends;
 }

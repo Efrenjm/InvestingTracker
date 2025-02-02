@@ -2,7 +2,7 @@ package org.efrenjm.investingtracker.model.Organization;
 
 import lombok.*;
 import org.efrenjm.investingtracker.model.Account.Account;
-import org.efrenjm.investingtracker.model.Profile.PublicProfile;
+import org.efrenjm.investingtracker.model.Profile.Profile;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
@@ -28,7 +28,7 @@ public class Organization {
     private List<UserRole> users;
 
     @Field("created_by")
-    private PublicProfile createdBy;
+    private Profile createdBy;
 
     @Field("created_at")
     private ZonedDateTime createdAt;
