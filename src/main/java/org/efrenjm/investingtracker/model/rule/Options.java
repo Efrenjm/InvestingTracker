@@ -1,7 +1,7 @@
-package org.efrenjm.investingtracker.model.Rule;
+package org.efrenjm.investingtracker.model.rule;
 
 import lombok.*;
-import org.efrenjm.investingtracker.model.Account.Account;
+import org.efrenjm.investingtracker.model.account.Account;
 import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.time.LocalDate;

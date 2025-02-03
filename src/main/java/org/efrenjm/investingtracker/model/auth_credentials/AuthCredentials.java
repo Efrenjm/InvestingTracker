@@ -1,8 +1,9 @@
-package org.efrenjm.investingtracker.model.Auth;
+package org.efrenjm.investingtracker.model.auth_credentials;
 
 import lombok.*;
-import org.efrenjm.investingtracker.model.Profile.Profile;
+import org.efrenjm.investingtracker.model.profile.Profile;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 import org.springframework.security.core.GrantedAuthority;
@@ -19,7 +20,7 @@ import java.util.Set;
 @Getter
 @Builder
 @ToString
-@Document(collection = "auth")
+@Document(collection = "auth_credentials")
 public class AuthCredentials implements UserDetails {
     @Id
     @Field("_id")
@@ -35,6 +36,7 @@ public class AuthCredentials implements UserDetails {
     private boolean active = true;
     private Set<GrantedAuthority> roles = new HashSet<GrantedAuthority>();
 
+    @DBRef
     private Profile profile;
 
     private boolean active = true;

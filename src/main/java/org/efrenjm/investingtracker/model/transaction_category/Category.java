@@ -1,4 +1,4 @@
-package org.efrenjm.investingtracker.model.TransactionCategory;
+package org.efrenjm.investingtracker.model.transaction_category;
 
 import lombok.*;
 

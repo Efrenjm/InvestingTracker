@@ -4,7 +4,7 @@ import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.efrenjm.investingtracker.dto.authentication.LoginRequestDTO;
 import org.efrenjm.investingtracker.dto.authentication.RegisterRequestDTO;
-import org.efrenjm.investingtracker.service.user_management.AuthenticationService;
+import org.efrenjm.investingtracker.service.authentication.AuthenticationService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;

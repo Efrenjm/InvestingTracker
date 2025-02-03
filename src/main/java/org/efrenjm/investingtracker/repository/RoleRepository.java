@@ -1,6 +1,6 @@
 package org.efrenjm.investingtracker.repository;
 
-import org.efrenjm.investingtracker.model.Role.Role;
+import org.efrenjm.investingtracker.model.role.Role;
 import org.springframework.data.mongodb.repository.ReactiveMongoRepository;
 import org.springframework.stereotype.Repository;
 

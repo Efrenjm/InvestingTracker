@@ -1,4 +1,4 @@
-package org.efrenjm.investingtracker.model.Rule;
+package org.efrenjm.investingtracker.model.rule;
 
 import lombok.*;
 

@@ -1,4 +1,4 @@
-package org.efrenjm.investingtracker.model.Account;
+package org.efrenjm.investingtracker.model.account;
 
 import lombok.*;
 import org.springframework.data.mongodb.core.mapping.Field;

@@ -1,8 +1,9 @@
-package org.efrenjm.investingtracker.model.Profile;
+package org.efrenjm.investingtracker.model.profile;
 
 import lombok.*;
-import org.efrenjm.investingtracker.model.Organization.Organization;
+import org.efrenjm.investingtracker.model.organization.Organization;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
@@ -40,6 +41,7 @@ public class Profile {
     @Field("profile_picture")
     private String profilePicture;
 
+    @DBRef
     private List<Organization> organizations;
 
     private Boolean active;
@@ -53,5 +55,6 @@ public class Profile {
     @Field("last_login")
     private Date lastLogin;
 
+    @DBRef
     private List<Profile> friends;
 }

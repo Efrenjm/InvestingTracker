@@ -1,7 +1,6 @@
-package org.efrenjm.investingtracker.model.Role;
+package org.efrenjm.investingtracker.model.role;
 
 import lombok.*;
-import org.springframework.data.mongodb.core.mapping.Document;
 
 @NoArgsConstructor
 @AllArgsConstructor

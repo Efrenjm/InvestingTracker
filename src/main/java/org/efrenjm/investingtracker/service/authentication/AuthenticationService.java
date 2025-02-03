@@ -1,4 +1,4 @@
-package org.efrenjm.investingtracker.service.user_management;
+package org.efrenjm.investingtracker.service.authentication;
 
 import lombok.AllArgsConstructor;
 import org.efrenjm.investingtracker.config.JwtService;
@@ -7,9 +7,12 @@ import org.efrenjm.investingtracker.exception.authentication.InvalidCredentialsE
 import org.efrenjm.investingtracker.exception.authentication.MissingCredentialsException;
 import org.efrenjm.investingtracker.exception.authentication.UserAlreadyExistsException;
 import org.efrenjm.investingtracker.exception.authentication.UserRegistrationException;
-import org.efrenjm.investingtracker.model.Auth.AuthCredentials;
-import org.efrenjm.investingtracker.model.Profile.Profile;
+import org.efrenjm.investingtracker.model.auth_credentials.AuthCredentials;
+import org.efrenjm.investingtracker.model.organization.Organization;
+import org.efrenjm.investingtracker.model.organization.UserRole;
+import org.efrenjm.investingtracker.model.profile.Profile;
 import org.efrenjm.investingtracker.repository.AuthCredentialsRepository;
+import org.efrenjm.investingtracker.repository.OrganizationRepository;
 import org.efrenjm.investingtracker.repository.ProfileRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -18,12 +21,14 @@ import org.springframework.transaction.reactive.TransactionalOperator;
 import reactor.core.publisher.Mono;
 
 import java.util.Date;
+import java.util.List;
 
 @Service
 @AllArgsConstructor
 public class AuthenticationService implements IAuthenticationService {
 	private final AuthCredentialsRepository authCredentialsRepository;
 	private final ProfileRepository profileRepository;
+	private final OrganizationRepository organizationRepository;
 	private final PasswordEncoder passwordEncoder;
 	private final JwtService jwtService;
 	private final TransactionalOperator transactionalOperator;
@@ -59,7 +64,9 @@ public class AuthenticationService implements IAuthenticationService {
 		String email = user.getEmail();
 		String phone = user.getPhone();
 
-		if (email != null) {
+		if (email != null && phone != null) {
+			userExists = authCredentialsRepository.existsByEmailOrPhoneNumber(email, phone);
+		} else if (email != null) {
 			userExists = authCredentialsRepository.existsByEmail(email);
 		} else if (phone != null) {
 			userExists = authCredentialsRepository.existsByPhoneNumber(phone);
@@ -84,18 +91,31 @@ public class AuthenticationService implements IAuthenticationService {
 					.lastLogin(now)
 					.build();
 
-			AuthCredentials newCredentials =  AuthCredentials.builder()
-					.email(email)
-					.phoneNumber(phone)
-					.password(password)
-					.profile(newProfile)
-					.build();
+			return profileRepository.save(newProfile)
+					.flatMap(savedProfile -> {
+						AuthCredentials newCredentials =  AuthCredentials.builder()
+								.email(email)
+								.phoneNumber(phone)
+								.password(password)
+								.profile(newProfile)
+								.build();
 
-			return transactionalOperator.transactional(
-					authCredentialsRepository.save(newCredentials)
-							.then(profileRepository.save(newProfile))
-							.onErrorMap(e ->  new UserRegistrationException("Error in user registration: " + e.getMessage()))
-			);
+						Organization newOrganization = Organization.builder()
+								.name("Personal")
+								.description("Personal organization")
+								.createdBy(newProfile)
+								.createdAt(now)
+								.updatedAt(now)
+								.users(List.of(new UserRole(newProfile, "OWNER")))
+								.build();
+
+						return transactionalOperator.transactional(
+								authCredentialsRepository.save(newCredentials)
+										.then(organizationRepository.save(newOrganization))
+										.thenReturn(savedProfile)
+						);
+					})
+					.onErrorMap(e ->  new UserRegistrationException("Error in user registration: " + e.getMessage()));
 		});
 	}
 }

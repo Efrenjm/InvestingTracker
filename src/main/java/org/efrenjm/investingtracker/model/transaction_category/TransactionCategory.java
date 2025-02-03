@@ -1,7 +1,7 @@
-package org.efrenjm.investingtracker.model.TransactionCategory;
+package org.efrenjm.investingtracker.model.transaction_category;
 
 import lombok.*;
-import org.efrenjm.investingtracker.model.Profile.Profile;
+import org.efrenjm.investingtracker.model.profile.Profile;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;

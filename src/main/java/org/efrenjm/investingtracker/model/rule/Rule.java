@@ -1,7 +1,7 @@
-package org.efrenjm.investingtracker.model.Rule;
+package org.efrenjm.investingtracker.model.rule;
 
 import lombok.*;
-import org.efrenjm.investingtracker.model.Organization.Organization;
+import org.efrenjm.investingtracker.model.organization.Organization;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
