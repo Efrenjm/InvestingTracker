@@ -1,5 +1,6 @@
 package org.efrenjm.investingtracker.handler;
 
+import org.efrenjm.investingtracker.exception.ResourceNotFound;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,5 +26,10 @@ public class GlobalExceptionHandler {
 				.map(error -> error.getField() + ": " + error.getDefaultMessage())
 				.collect(Collectors.joining(", "));
 		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorMessage);
+	}
+
+	@ExceptionHandler(ResourceNotFound.class)
+	public ResponseEntity<String> resourceNotFoundError(Exception ex) {
+		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
 	}
 }

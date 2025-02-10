@@ -25,6 +25,8 @@ import java.util.UUID;
 @Service
 @AllArgsConstructor
 public class AuthenticationService implements IAuthenticationService {
+	private static final int TOKEN_EXPIRATION = 10 * 60 * 1000;
+
 	private final AuthCredentialsRepository authCredentialsRepository;
 	private final ProfileRepository profileRepository;
 	private final OrganizationRepository organizationRepository;
@@ -92,20 +94,14 @@ public class AuthenticationService implements IAuthenticationService {
 				return Mono.error(new UserAlreadyExistsException());
 			}
 
-			Date now = new Date();
-			String verificationToken = generateVerificationToken();
-
 			AuthCredentials newCredentials = AuthCredentials.builder()
 					.email(email)
 					.phoneNumber(phone)
 					.password(password)
 					.active(false)
-					.verificationToken(verificationToken)
-					.tokenExpiration(new Date(now.getTime() + 24 * 60 * 60 * 1000))
 					.build();
 
-			return authCredentialsRepository.save(newCredentials)
-					.doOnSuccess(credentials -> emailService.sendVerificationEmail(email, verificationToken))
+			return createTokenVerificationRequest(newCredentials)
 					.onErrorMap(e -> new UserRegistrationException("Error in user registration: " + e.getMessage()));
 		});
 	}
@@ -135,7 +131,10 @@ public class AuthenticationService implements IAuthenticationService {
 					Date now = new Date();
 
 					if (credentials.getTokenExpiration().before(now)) {
-						return Mono.error(new TokenExpiredException());
+						return createTokenVerificationRequest(credentials)
+								.onErrorMap(e -> new UserRegistrationException("Error verifying email: " + e.getMessage()))
+								.then(Mono.error(new TokenExpiredException()));
+
 					} else if (credentials.isActive()) {
 						return Mono.error(new AccountAlreadyVerifiedException());
 					}
@@ -177,7 +176,32 @@ public class AuthenticationService implements IAuthenticationService {
 				});
 	}
 
+	public Mono<Boolean> generateNewVerificationToken(String email, String phone) {
+		return authCredentialsRepository.findByEmailOrPhoneNumber(email, phone)
+				.flatMap(credentials -> {
+					if (credentials.isActive()) {
+						return Mono.error(new AccountAlreadyVerifiedException());
+					}
+
+					return createTokenVerificationRequest(credentials)
+							.thenReturn(true);
+				})
+				.onErrorMap(e -> new UserRegistrationException("Error generating new verification token: " + e.getMessage()));
+	}
+
+	private Mono<AuthCredentials> createTokenVerificationRequest(AuthCredentials user) {
+		Date now = new Date();
+		String token = generateVerificationToken();
+
+		user.setVerificationToken(token);
+		user.setTokenExpiration(new Date(now.getTime() + TOKEN_EXPIRATION));
+
+		return authCredentialsRepository.save(user)
+				.doOnSuccess(savedUser -> emailService.sendVerificationEmail(savedUser.getEmail(), savedUser.getVerificationToken()));
+	}
+
 	private String generateVerificationToken() {
+		/* TODO: Change to 6 digit code */
 		return UUID.randomUUID().toString();
 	}
 }

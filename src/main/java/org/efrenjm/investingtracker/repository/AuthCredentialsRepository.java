@@ -8,7 +8,7 @@ import reactor.core.publisher.Mono;
 
 @Repository
 public interface AuthCredentialsRepository extends ReactiveMongoRepository<AuthCredentials, String> {
-	Mono<UserDetails> findByEmailOrPhoneNumber(String email, String phone);
+	Mono<AuthCredentials> findByEmailOrPhoneNumber(String email, String phone);
 
 	Mono<UserDetails> findByUsername(String username);
 

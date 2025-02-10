@@ -15,13 +15,11 @@ public class EmailService {
 	private JavaMailSender mailSender;
 
 	public void sendVerificationEmail(String toEmail, String verificationToken) {
-		String verificationUrl = baseUrl + "/api/auth/verify?token=" + verificationToken;
-
 		SimpleMailMessage message = new SimpleMailMessage();
 
 		message.setTo(toEmail);
 		message.setSubject("Please verify your email address");
-		message.setText("Click in the following link to complete your registration: " + verificationUrl);
+		message.setText("Use the following code to verify your email: " + verificationToken);
 
 		mailSender.send(message);
 	}
