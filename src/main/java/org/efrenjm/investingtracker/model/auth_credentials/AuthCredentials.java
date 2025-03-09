@@ -4,8 +4,8 @@ import lombok.*;
 import org.bson.types.ObjectId;
 import org.efrenjm.investingtracker.model.profile.Profile;
 import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.DocumentReference;
 import org.springframework.data.mongodb.core.mapping.Field;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -38,7 +38,7 @@ public class AuthCredentials implements UserDetails {
     private boolean active = true;
     private Set<GrantedAuthority> roles = new HashSet<GrantedAuthority>();
 
-    @DBRef
+    @DocumentReference
     private Profile profile;
 
     private boolean active = false;

@@ -1,8 +1,8 @@
 package org.efrenjm.investingtracker.config;
 
 import lombok.RequiredArgsConstructor;
+import org.efrenjm.investingtracker.service.authentication.CustomUserDetailsService;
 import org.efrenjm.investingtracker.service.utils.JwtService;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
@@ -18,7 +18,7 @@ import org.springframework.security.web.server.SecurityWebFilterChain;
 @RequiredArgsConstructor
 public class SecurityConfig {
 	private final JwtService jwtService;
-	private final ReactiveUserDetailsService userDetailsService;
+	private final CustomUserDetailsService userDetailsService;
 
 	@Bean
 	public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {

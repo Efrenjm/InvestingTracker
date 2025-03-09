@@ -1,7 +1,7 @@
 package org.efrenjm.investingtracker.service.utils;
 
 import io.jsonwebtoken.*;
-import org.springframework.security.core.userdetails.UserDetails;
+import org.efrenjm.investingtracker.model.auth_credentials.AuthCredentials;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
@@ -15,12 +15,12 @@ public class JwtService {
 //	@Value("{jwt.expiration}")
 	private static final long EXPIRATION_TIME = 864_000_000; // 10 days
 
-	public Mono<String> generateToken(UserDetails userDetails) {
+	public Mono<String> generateToken(AuthCredentials userDetails) {
 		Date now = new Date();
 		Date expiryDate = new Date(now.getTime() + EXPIRATION_TIME);
 		return Mono.just(Jwts.builder()
 				.issuer("investing-tracker")
-				.subject(userDetails.getUsername())
+				.subject(userDetails.getId().toString())
 				.issuedAt(now)
 				.expiration(expiryDate)
 				.signWith(key)
@@ -42,7 +42,7 @@ public class JwtService {
 		}
 	}
 
-	public String extractUsername(String token) {
+	public String extractUserId(String token) {
 		return Jwts.parser()
 				.verifyWith(key)
 				.build()

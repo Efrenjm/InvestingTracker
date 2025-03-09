@@ -5,6 +5,7 @@ import lombok.*;
 import org.efrenjm.investingtracker.model.profile.Profile;
 import org.efrenjm.investingtracker.model.role.Role;
 import org.springframework.data.mongodb.core.mapping.DBRef;
+import org.springframework.data.mongodb.core.mapping.DocumentReference;
 
 @NoArgsConstructor
 @AllArgsConstructor
@@ -12,7 +13,7 @@ import org.springframework.data.mongodb.core.mapping.DBRef;
 @Setter
 @ToString
 public class UserRole {
-    @DBRef
+    @DocumentReference
     @JsonBackReference
     private Profile user;
 

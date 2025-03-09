@@ -7,6 +7,7 @@ import org.efrenjm.investingtracker.model.organization.Organization;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.DocumentReference;
 import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.util.Date;
@@ -43,7 +44,7 @@ public class Profile {
     @Field("profile_picture")
     private String profilePicture;
 
-    @DBRef
+    @DocumentReference
     @JsonManagedReference
     private List<Organization> organizations;
 
@@ -56,6 +57,7 @@ public class Profile {
     @Field("last_login")
     private Date lastLogin;
 
-    @DBRef
+    @DocumentReference
+    @JsonManagedReference
     private List<Profile> friends;
 }

@@ -1,20 +1,23 @@
 package org.efrenjm.investingtracker.model.account;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import lombok.*;
 import org.bson.types.ObjectId;
 import org.efrenjm.investingtracker.model.organization.Organization;
 import org.efrenjm.investingtracker.model.rule.Rule;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.DocumentReference;
 import org.springframework.data.mongodb.core.mapping.Field;
 
-import java.time.ZonedDateTime;
+import java.util.Date;
 import java.util.List;
 
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
 @Setter
+@Builder
 @ToString
 @Document(collection = "accounts")
 public class Account {
@@ -22,23 +25,25 @@ public class Account {
     @Field("_id")
     private ObjectId id;
 
+    @DocumentReference
+    @JsonBackReference
     private Organization organization;
 
     private String name;
+
+    private String description;
 
     private String type;
 
     private Double available;
 
-    private String description;
-
     private List<String> tags;
 
     @Field("created_at")
-    private ZonedDateTime createdAt;
+    private Date createdAt;
 
     @Field("updated_at")
-    private ZonedDateTime updatedAt;
+    private Date updatedAt;
 
     private Configuration configuration;
 
