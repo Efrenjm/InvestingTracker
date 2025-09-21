@@ -1,28 +1,45 @@
 package org.efrenjm.investingtracker.infrastructure.jwt;
 
 import io.jsonwebtoken.*;
+import io.jsonwebtoken.security.Keys;
+import lombok.RequiredArgsConstructor;
+import org.efrenjm.investingtracker.domain.dto.UserIdentity;
+import org.efrenjm.investingtracker.domain.model.utils.SystemRole;
 import org.efrenjm.investingtracker.domain.ports.outbound.security.JwtPort;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
 import javax.crypto.SecretKey;
-import java.util.Date;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
-public class JwtOperations implements JwtPort {
-//	@Value("${jwt.secret}")
-	private static final SecretKey key = Jwts.SIG.HS256.key().build();
-//	@Value("{jwt.expiration}")
-	private static final long EXPIRATION_TIME = 864_000_000; // 10 days
+public class JwtOperations implements JwtPort
+{
+	private final SecretKey key;
+	private final long EXPIRATION_TIME;
 
-	public Mono<String> generateToken(String userId) {
+	public JwtOperations(@Value("${jwt.secret}") String secret, @Value("${jwt.expiration}") long expirationTime)
+	{
+		this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+		this.EXPIRATION_TIME = expirationTime;
+	}
+
+	public Mono<String> generateToken(UserIdentity payload) {
 		Date now = new Date();
 		Date expiryDate = new Date(now.getTime() + EXPIRATION_TIME);
+
+		Map<String, Object> claims = new HashMap<>();
+		claims.put("roles", payload.roles());
+
 		return Mono.just(Jwts.builder()
 				.issuer("investing-tracker")
-				.subject(userId)
+				.subject(payload.id())
+				.claims(claims)
 				.issuedAt(now)
 				.expiration(expiryDate)
 				.signWith(key)
@@ -51,6 +68,22 @@ public class JwtOperations implements JwtPort {
 				.parseSignedClaims(token)
 				.getPayload()
 				.getSubject();
+	}
+
+	@Override
+	public Set<SystemRole> extractRoles(String token) {
+		@SuppressWarnings("unchecked")
+		List<String> roles = Jwts.parser()
+				.verifyWith(key)
+				.build()
+				.parseSignedClaims(token)
+				.getPayload()
+				.get("roles", List.class);
+
+		return roles == null ? Set.of() :
+				roles.stream()
+						.map(SystemRole::valueOf)
+						.collect(Collectors.toSet());
 	}
 
 	public Mono<Void> setTokenInCookie(String token, ServerHttpResponse response) {

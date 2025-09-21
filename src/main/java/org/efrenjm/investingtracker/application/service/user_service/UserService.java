@@ -7,7 +7,7 @@ import org.efrenjm.investingtracker.domain.dto.WalletSummary;
 import org.efrenjm.investingtracker.application.service.user_service.exceptions.WalletNotFoundException;
 import org.efrenjm.investingtracker.application.service.user_service.exceptions.UserNotFoundException;
 import org.efrenjm.investingtracker.domain.model.user.User;
-import org.efrenjm.investingtracker.domain.ports.inbound.UserServicePort;
+import org.efrenjm.investingtracker.domain.ports.inbound.UserPort;
 import org.efrenjm.investingtracker.domain.ports.outbound.repository.UserRepositoryPort;
 import org.efrenjm.investingtracker.domain.ports.outbound.repository.WalletRepositoryPort;
 import org.efrenjm.investingtracker.domain.dto.PublicProfile;
@@ -16,10 +16,12 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
-public class UserService implements UserServicePort {
+public class UserService implements UserPort
+{
 	private final UserRepositoryPort userRepository;
 	private final WalletRepositoryPort walletRepository;
 
@@ -35,8 +37,8 @@ public class UserService implements UserServicePort {
 
 	/* TODO: Delete personal wallet */
 	public Mono<Void> deleteUser(User user) {
-		List<String> wallets = user.getWallets();
-		List<String> friends = user.getFriends();
+//		Set<String> wallets = user.getWallets();
+//		Set<String> friends = user.getFriends();
 
 		// friends.forEach(friend -> friend.getFriends().remove(user));
 		//
@@ -59,50 +61,61 @@ public class UserService implements UserServicePort {
 		return userRepository.delete(user.getId());
 	}
 
-	public Flux<PublicProfile> getFriends(User user) {
+	public Flux<PublicProfile> getFriends(User user)
+	{
 		return userRepository.fetchFriends(user.getId());
 	}
 
-	public Mono<User> addFriend(User user, String friendId) {
-		return userRepository.findById(friendId)
-				/* TODO: Add logic to invite friends */
-				.switchIfEmpty(Mono.error(new UserNotFoundException(new ObjectId(friendId))))
-				.flatMap(friendProfile -> {
-					user.getFriends().add(friendProfile.getId());
-					return userRepository.save(user);
-				});
+	public Mono<User> addFriend(User user, String friendId)
+	{
+		return Mono.empty();
+//		return userRepository.findById(friendId)
+//				/* TODO: Add logic to invite friends */
+//				.switchIfEmpty(Mono.error(new UserNotFoundException(new ObjectId(friendId))))
+//				.flatMap(friendProfile -> {
+//					user.getFriends().add(friendProfile.getId());
+//					return userRepository.save(user);
+//				});
 	}
 
-	public Mono<User> removeFriend(User user, String friendToRemoveId) {
-		List<String> updatedFriendsList = user.getFriends().stream()
-				.filter(friendId -> !friendId.equals(friendToRemoveId))
-				.toList();
+	// TODO: Implement logic from the domain
+	public Mono<User> removeFriend(User user, String friendToRemoveId)
+	{
+//		user.removeFriend(friendToRemoveId);
 
-		user.setFriends(updatedFriendsList);
-
-		return userRepository.save(user);
+//		Set<String> updatedFriendsList = user.getFriends().stream()
+//				.filter(friendId -> !friendId.equals(friendToRemoveId))
+//				.toList();
+//
+//		user.setFriends(updatedFriendsList);
+//
+//		return userRepository.save(user);
+		return Mono.empty();
 	}
 
 	public Flux<WalletSummary> getWallets(User user) {
 		return userRepository.fetchWallets(user.getId());
 	}
 
+	// TODO: Implement logic from the domain
 	public Mono<User> joinWallet(User user, String walletId) {
 		return walletRepository.findById(walletId)
 				.switchIfEmpty(Mono.error(new WalletNotFoundException(walletId)))
 				.flatMap(wallet -> {
-					user.getWallets().add(wallet.getId());
+//					user.getWallets().add(wallet.getId());
 					return userRepository.save(user);
 				});
 	}
 
+	// TODO: Implement logic from the domain
 	public Mono<User> quitWallet(User user, String walletToQuitId) {
-		List<String> updatedWalletList = user.getWallets().stream()
-				.filter(walletId -> !walletId.equals(walletToQuitId))
-				.toList();
-
-		user.setWallets(updatedWalletList);
-
-		return userRepository.save(user);
+//		List<String> updatedWalletList = user.getWallets().stream()
+//				.filter(walletId -> !walletId.equals(walletToQuitId))
+//				.toList();
+//
+//		user.setWallets(updatedWalletList);
+//
+//		return userRepository.save(user);
+		return Mono.empty();
 	}
 }

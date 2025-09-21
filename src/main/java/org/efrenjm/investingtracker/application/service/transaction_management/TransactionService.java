@@ -4,9 +4,9 @@ import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
 import org.efrenjm.investingtracker.domain.dto.TransactionSummary;
 import org.efrenjm.investingtracker.domain.model.transaction.Transaction;
-import org.efrenjm.investingtracker.domain.ports.inbound.TransactionServicePort;
+import org.efrenjm.investingtracker.domain.ports.inbound.TransactionPort;
 import org.efrenjm.investingtracker.domain.ports.outbound.repository.TransactionRepositoryPort;
-import org.efrenjm.investingtracker.infrastructure.persistence.entity.UserEntity;
+import org.efrenjm.investingtracker.infrastructure.persistence.entity.user.UserEntity;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
@@ -15,7 +15,8 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class TransactionService implements TransactionServicePort {
+public class TransactionService implements TransactionPort
+{
 	private final TransactionRepositoryPort transactionRepository;
 
 	public Mono<Transaction> getTransactionDetails(ObjectId transactionId) {

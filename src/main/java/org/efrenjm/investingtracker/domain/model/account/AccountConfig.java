@@ -7,7 +7,8 @@ import lombok.*;
 @Getter
 @Setter
 @ToString
-public class AccountConfig {
+public class AccountConfig
+{
 	private String color;
 	private String icon;
 	private Boolean visible;
@@ -15,7 +16,8 @@ public class AccountConfig {
 	private Boolean includedInNetSum;
 	private String group;
 
-	public static AccountConfig defaultConfig() {
+	public static AccountConfig defaultConfig()
+	{
 		return AccountConfig.builder()
 				.color("#000000")
 				.icon("account_balance")

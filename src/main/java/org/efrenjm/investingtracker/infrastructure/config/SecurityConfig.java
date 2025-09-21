@@ -13,11 +13,13 @@ import org.springframework.security.web.server.SecurityWebFilterChain;
 @Configuration
 @EnableWebFluxSecurity
 @RequiredArgsConstructor
-public class SecurityConfig {
+public class SecurityConfig
+{
 	private final SecurityService securityService;
 
 	@Bean
-	public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
+	public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http)
+	{
 		return http
 				.csrf(ServerHttpSecurity.CsrfSpec::disable)
 				.formLogin(ServerHttpSecurity.FormLoginSpec::disable)
@@ -27,16 +29,20 @@ public class SecurityConfig {
 								"/auth/login",
 								"/auth/register",
 								"/auth/refresh-code",
-								"/auth/verify-code"
-						).permitAll()
-						.anyExchange().authenticated()
+								"/auth/verify-code",
+								"/auth/forgot-password"
+						)
+						.permitAll()
+						.anyExchange()
+						.authenticated()
 				)
 				.addFilterAt(jwtAuthenticationFilter(), SecurityWebFiltersOrder.AUTHENTICATION)
 				.build();
 	}
 
 	@Bean
-	public JwtAuthenticationFilter jwtAuthenticationFilter() {
+	public JwtAuthenticationFilter jwtAuthenticationFilter()
+	{
 		return new JwtAuthenticationFilter(securityService);
 	}
 }

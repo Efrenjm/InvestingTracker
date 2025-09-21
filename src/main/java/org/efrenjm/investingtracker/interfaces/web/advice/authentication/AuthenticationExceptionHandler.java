@@ -3,7 +3,7 @@ package org.efrenjm.investingtracker.interfaces.web.advice.authentication;
 import org.efrenjm.investingtracker.application.service.authentication.exceptions.*;
 import org.efrenjm.investingtracker.domain.model.user.exceptions.CodeExpiredException;
 import org.efrenjm.investingtracker.domain.model.user.exceptions.InvalidCodeException;
-import org.efrenjm.investingtracker.interfaces.rest.authentication.AuthenticationController;
+import org.efrenjm.investingtracker.interfaces.rest.controller.authentication.AuthenticationController;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
