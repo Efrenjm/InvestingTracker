@@ -1,10 +1,10 @@
 package org.efrenjm.investingtracker.domain.ports.inbound;
 
-import org.bson.types.ObjectId;
 import org.efrenjm.investingtracker.domain.model.wallet.Wallet;
+import reactor.core.publisher.Mono;
 
 public interface WalletPort
 {
-	Wallet createWallet(Wallet wallet);
-	Wallet getWalletById(ObjectId id);
+	Mono<Wallet> createWallet(Wallet wallet);
+	Mono<Wallet> getWalletById(String walletId);
 }

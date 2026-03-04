@@ -11,7 +11,7 @@ import org.efrenjm.investingtracker.infrastructure.persistence.entity.user.UserE
 import org.efrenjm.investingtracker.infrastructure.persistence.mongodb.repository.UserMongoRepository;
 import org.efrenjm.investingtracker.infrastructure.persistence.mongodb.projections.AccountSummaryProjection;
 import org.efrenjm.investingtracker.infrastructure.persistence.mongodb.projections.WalletSummaryProjection;
-import org.efrenjm.investingtracker.infrastructure.security.SecurityUserDetails;
+import org.efrenjm.investingtracker.infrastructure.persistence.utils.MongoUtils;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -26,34 +26,38 @@ public class UserRepositoryAdapter implements UserRepositoryPort
 	@Override
 	public Mono<User> findById(String userId)
 	{
+		ObjectId id = MongoUtils.idToEntity(userId);
+		if (id == null)
+		{
+			return Mono.empty();
+		}
 		return userMongoRepository
-				.findById(new ObjectId(userId))
+				.findById(id)
 				.map(UserEntity::toDomain);
 	}
 
 	@Override
-	public Mono<SecurityUserDetails> findSecurityUser(String username)
+	public Mono<User> findSecurityUser(String username)
 	{
+		if (username == null || username.isBlank())
+		{
+			return Mono.empty();
+		}
 		return userMongoRepository
 				.findByUsername(username)
-				.map(user -> SecurityUserDetails.fromDomain(user.toDomain()));
+				.map(UserEntity::toDomain);
 	}
 
 	@Override
 	public Mono<User> findByAnyCredential(String credential)
 	{
-		System.out.println("Finding by credential: " + credential);
+		if (credential == null || credential.isBlank())
+		{
+			return Mono.empty();
+		}
 		return userMongoRepository
 				.findByAnyCredential(credential)
-				.doOnNext(user -> {
-					System.out.println("Found user: " + user);
-				})
-				.doOnError(error -> System.out.println("Error finding user: " + error.getMessage()))
-				.map(user -> {
-					System.out.println("Mapping user: " + user);
-					return new User();
-				});
-//				.map(UserEntity::toDomain);
+				.map(UserEntity::toDomain);
 	}
 
 	@Override
@@ -67,12 +71,21 @@ public class UserRepositoryAdapter implements UserRepositoryPort
 	@Override
 	public Mono<Void> delete(String userId)
 	{
-		return userMongoRepository.deleteById(new ObjectId(userId));
+		ObjectId id = MongoUtils.idToEntity(userId);
+		if (id == null)
+		{
+			return Mono.empty();
+		}
+		return userMongoRepository.deleteById(id);
 	}
 
 	@Override
 	public Mono<User> findEmailInUse(String email)
 	{
+		if (email == null || email.isBlank())
+		{
+			return Mono.empty();
+		}
 		return userMongoRepository
 				.findEmailInUse(email)
 				.map(UserEntity::toDomain);
@@ -81,6 +94,10 @@ public class UserRepositoryAdapter implements UserRepositoryPort
 	@Override
 	public Mono<User> findPhoneInUse(String phone)
 	{
+		if (phone == null || phone.isBlank())
+		{
+			return Mono.empty();
+		}
 		return userMongoRepository
 				.findPhoneInUse(phone)
 				.map(UserEntity::toDomain);
@@ -89,21 +106,45 @@ public class UserRepositoryAdapter implements UserRepositoryPort
 	@Override
 	public Flux<AccountSummary> fetchAccounts(String userId)
 	{
+		ObjectId id = MongoUtils.idToEntity(userId);
+		if (id == null)
+		{
+			return Flux.empty();
+		}
 		return userMongoRepository
-				.fetchAccounts(new ObjectId(userId))
+				.fetchAccounts(id)
 				.map(AccountSummaryProjection::toDomain);
 	}
 
 	public Flux<PublicProfile> fetchFriends(String userId)
 	{
-		return null;/*userMongoRepository.fetchFriends(new ObjectId(userId))
-				.map(PublicProfileProjection::toDomain);*/
+		ObjectId id = MongoUtils.idToEntity(userId);
+		if (id == null)
+		{
+			return Flux.empty();
+		}
+		return userMongoRepository.fetchFriends(id)
+				.map(projection -> new PublicProfile(
+						projection.get_id(),
+						projection.getUsername(),
+						projection.getEmail(),
+						projection.getPhoneNumber(),
+						projection.getFirstName(),
+						projection.getMiddleName(),
+						projection.getLastName(),
+						projection.getProfilePicture()
+				));
 	}
 
 	public Flux<WalletSummary> fetchWallets(String userId)
 	{
+		ObjectId id = MongoUtils.idToEntity(userId);
+		if (id == null)
+		{
+			return Flux.empty();
+		}
 		return userMongoRepository
-				.fetchWallets(new ObjectId(userId))
+				.fetchWallets(id)
 				.map(WalletSummaryProjection::toDomain);
 	}
 }

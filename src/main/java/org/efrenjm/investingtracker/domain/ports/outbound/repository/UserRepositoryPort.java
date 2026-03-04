@@ -5,7 +5,6 @@ import org.efrenjm.investingtracker.domain.dto.Profile;
 import org.efrenjm.investingtracker.domain.dto.PublicProfile;
 import org.efrenjm.investingtracker.domain.dto.WalletSummary;
 import org.efrenjm.investingtracker.domain.model.user.User;
-import org.efrenjm.investingtracker.infrastructure.security.SecurityUserDetails;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -14,7 +13,7 @@ public interface UserRepositoryPort {
 
 //	Mono<Profile> findProfile(String email);
 
-	Mono<SecurityUserDetails> findSecurityUser(String username);
+	Mono<User> findSecurityUser(String username);
 
 	Mono<User> findByAnyCredential(String credential);
 

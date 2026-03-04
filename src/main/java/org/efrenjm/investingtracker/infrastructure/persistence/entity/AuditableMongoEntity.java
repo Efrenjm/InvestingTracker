@@ -2,9 +2,9 @@ package org.efrenjm.investingtracker.infrastructure.persistence.entity;
 
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import org.bson.types.ObjectId;
 import org.efrenjm.investingtracker.domain.model.AuditableModel;
-import org.efrenjm.investingtracker.infrastructure.persistence.utils.MongoUtils;
+import org.springframework.data.annotation.CreatedBy;
+import org.springframework.data.annotation.LastModifiedBy;
 import org.springframework.data.mongodb.core.mapping.Field;
 
 @AllArgsConstructor
@@ -15,8 +15,11 @@ import org.springframework.data.mongodb.core.mapping.Field;
 @ToString
 public abstract class AuditableMongoEntity extends BaseMongoEntity
 {
-	@Field("created_by") protected ObjectId createdBy;
-	@Field("updated_by") protected ObjectId updatedBy;
+	@CreatedBy
+	@Field("created_by") protected String createdBy;
+
+	@LastModifiedBy
+	@Field("updated_by") protected String updatedBy;
 
 	public static <B extends AuditableMongoEntityBuilder<?, ?>, D extends AuditableModel> B populateAuditableEntityFields(B builder, D domainObject)
 	{
@@ -24,16 +27,16 @@ public abstract class AuditableMongoEntity extends BaseMongoEntity
 			return builder;
 
 		builder
-				.createdBy(MongoUtils.idToEntity(domainObject.getCreatedBy()))
-				.updatedBy(MongoUtils.idToEntity(domainObject.getUpdatedBy()));
+				.createdBy(domainObject.getCreatedBy())
+				.updatedBy(domainObject.getUpdatedBy());
 		return populateBaseEntityFields(builder, domainObject);
 	}
 
 	public <B extends AuditableModel.AuditableModelBuilder<?, ?>> B populateAuditableDomainFields(B builder)
 	{
 		builder
-				.createdBy(MongoUtils.idToDomain(createdBy))
-				.updatedBy(MongoUtils.idToDomain(updatedBy));
+				.createdBy(createdBy)
+				.updatedBy(updatedBy);
 		return populateBaseDomainFields(builder);
 	}
 }

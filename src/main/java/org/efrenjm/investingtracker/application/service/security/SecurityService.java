@@ -1,7 +1,6 @@
 package org.efrenjm.investingtracker.application.service.security;
 
 import lombok.RequiredArgsConstructor;
-import org.bson.types.ObjectId;
 import org.efrenjm.investingtracker.application.service.user_service.exceptions.UserNotFoundException;
 import org.efrenjm.investingtracker.domain.dto.Profile;
 import org.efrenjm.investingtracker.domain.dto.UserIdentity;
@@ -12,7 +11,6 @@ import org.efrenjm.investingtracker.domain.ports.inbound.SecurityPort;
 import org.efrenjm.investingtracker.domain.ports.outbound.security.JwtPort;
 import org.efrenjm.investingtracker.domain.ports.outbound.security.PasswordEncoderPort;
 import org.efrenjm.investingtracker.domain.ports.outbound.security.SessionPort;
-import org.efrenjm.investingtracker.infrastructure.persistence.redis.UserSession;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
@@ -72,7 +70,7 @@ public class SecurityService implements SecurityPort
 	{
 		return userRepository
 				.findById(userId)
-				.switchIfEmpty(Mono.error(new UserNotFoundException(new ObjectId(userId))));
+				.switchIfEmpty(Mono.error(new UserNotFoundException(userId)));
 	}
 
 	@Override
@@ -82,13 +80,12 @@ public class SecurityService implements SecurityPort
 				.getUserSession(userId)
 				.switchIfEmpty(Mono.defer(() -> userRepository
 						.findById(userId)
-						.map(UserSession::fromUser)
-						.flatMap(session -> sessionOperations
-								.storeUserSession(userId, session, Duration.ofHours(1))
-								.thenReturn(session)
+						.map(Profile::from)
+						.flatMap(profile -> sessionOperations
+								.storeUserSession(userId, profile, Duration.ofHours(1))
+								.thenReturn(profile)
 						)
-				))
-				.map(UserSession::toProfile);
+				));
 	}
 
 	@Override

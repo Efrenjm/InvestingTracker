@@ -29,23 +29,7 @@ public class AccountService implements AccountPort
 				.switchIfEmpty(Mono.error(new IllegalArgumentException("Wallet not found")));
 	}
 
-//	public Mono<Account> getAccountDetails(String accountId, UserEntity userEntity) {
-//		return accountRepository.findById(accountId).single()
-//				.switchIfEmpty(Mono.error(new IllegalArgumentException("Account not found")));
-//	}
-
-//	public Mono<Account> createAccount(Account account, ObjectId walletId, UserEntity userEntity) {
-//		if (!userEntity.getWallets().contains(walletId)) {
-//			return Mono.error(new IllegalArgumentException("User does not belong to the wallet"));
-//		}
-//		return null;
-////		return accountRepository.createAccount(account, walletId)
-////				.switchIfEmpty(Mono.error(new IllegalArgumentException("Failed to create account")));
-//	}
-
-	// public Mono<Account> updateAccount(Account account) {
-	// return accountService.updateAccount(account, walletId)
-	// .switchIfEmpty(Mono.error(new IllegalArgumentException("Failed to update
-	// account")));
-	// }
+	// TODO: Implement getAccountDetails - fetch account by ID and verify user access
+	// TODO: Implement createAccount - validate user belongs to wallet, create via domain service, link to wallet
+	// TODO: Implement updateAccount - validate permissions, update via domain service
 }

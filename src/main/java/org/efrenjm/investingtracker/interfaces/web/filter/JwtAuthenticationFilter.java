@@ -51,7 +51,8 @@ public class JwtAuthenticationFilter implements WebFilter
 				new UsernamePasswordAuthenticationToken(userIdentity, null, grantedAuthorities);
 
 		return chain.filter(exchange)
-				.contextWrite(ReactiveSecurityContextHolder.withAuthentication(authToken));
+				.contextWrite(ReactiveSecurityContextHolder.withAuthentication(authToken))
+				.contextWrite(ctx -> ctx.put(ServerWebExchange.class, exchange));
 
 //		return securityService.loadUserByUserId(userId)
 //				.flatMap(userSession -> {

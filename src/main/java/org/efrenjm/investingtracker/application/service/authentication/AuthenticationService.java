@@ -47,8 +47,7 @@ public class AuthenticationService implements AuthPort
 	@Override
 	public Mono<Void> login(String username, String password, ServerWebExchange exchange)
 	{
-		return userRepository
-				.findByAnyCredential(username)
+		return userRepository.findByAnyCredential(username)
 				.switchIfEmpty(Mono.error(new InvalidCredentialsException()))
 				.flatMap(user -> {
 					if (!securityService.arePasswordsEqual(password, user.getPassword()))
@@ -65,8 +64,7 @@ public class AuthenticationService implements AuthPort
 						return Mono.error(new UserNotActiveException());
 					}
 
-					return securityService
-							.generateToken(user)
+					return securityService.generateToken(user)
 							.flatMap(jwt -> securityService.setTokenInCookie(jwt, exchange.getResponse()));
 				});
 	}
@@ -86,8 +84,7 @@ public class AuthenticationService implements AuthPort
 					}
 
 					User newUser = userDomainService.createUser(username, password);
-					return userRepository
-							.save(newUser)
+					return userRepository.save(newUser)
 							.doOnSuccess(this::sendVerificationRequest);
 				});
 	}
@@ -95,37 +92,32 @@ public class AuthenticationService implements AuthPort
 	@Override
 	public Mono<User> refreshVerificationCode(String userId)
 	{
-		return userRepository
-				.findById(userId)
+		return userRepository.findById(userId)
 				.flatMap(this::refreshVerificationCode);
 	}
 
 	@Override
 	public Mono<User> refreshVerificationCode(User user)
 	{
-		VerificationRequest request = user
-				.getVerificationRequest()
+		VerificationRequest request = user.getVerificationRequest()
 				.orElseThrow(NoVerificationInProcessException::new);
 
 		user.setVerificationRequest(userVerificationService.refreshRequest(request));
-		return userRepository
-				.save(user)
+		return userRepository.save(user)
 				.doOnSuccess(this::sendVerificationRequest);
 	}
 
 	@Override
 	public Mono<User> verifyCode(String userId, String code)
 	{
-		return userRepository
-				.findById(userId)
+		return userRepository.findById(userId)
 				.flatMap(user -> verifyCode(user, code));
 	}
 
 	@Override
 	public Mono<User> verifyCode(User user, String code)
 	{
-		VerificationRequest request = user
-				.getVerificationRequest()
+		VerificationRequest request = user.getVerificationRequest()
 				.orElseThrow(NoVerificationInProcessException::new);
 		try
 		{
@@ -134,8 +126,7 @@ public class AuthenticationService implements AuthPort
 		catch (CodeExpiredException e)
 		{
 			user.setVerificationRequest(userVerificationService.refreshRequest(request));
-			return userRepository
-					.save(user)
+			return userRepository.save(user)
 					.flatMap(savedUser -> {
 						this.sendVerificationRequest(savedUser);
 						return Mono.error(e);
@@ -156,16 +147,14 @@ public class AuthenticationService implements AuthPort
 	public Mono<User> updateCredential(User user, CodeUsage codeUsage, String credential)
 	{
 		User updatedUser = userDomainService.updateCredential(user, codeUsage, credential);
-		return userRepository
-				.save(updatedUser)
+		return userRepository.save(updatedUser)
 				.doOnSuccess(this::sendVerificationRequest);
 	}
 
 	@Override
 	public Mono<User> forgotPassword(String username, String newPassword)
 	{
-		return userRepository
-				.findByAnyCredential(username)
+		return userRepository.findByAnyCredential(username)
 				.flatMap(user -> {
 					if (user.isNewUser())
 					{
@@ -210,15 +199,13 @@ public class AuthenticationService implements AuthPort
 					{
 						if (user.isNewUser())
 						{
-							return userRepository
-									.delete(user.getId())
+							return userRepository.delete(user.getId())
 									.thenReturn(true);
 						}
 						else
 						{
 							user.clearVerificationRequest();
-							return userRepository
-									.save(user)
+							return userRepository.save(user)
 									.thenReturn(true);
 						}
 					}
@@ -229,14 +216,12 @@ public class AuthenticationService implements AuthPort
 
 	private void sendVerificationRequest(User user)
 	{
-		VerificationRequest req = user
-				.getVerificationRequest()
+		VerificationRequest req = user.getVerificationRequest()
 				.orElseThrow(NoVerificationInProcessException::new);
 
 		switch (req.getCodeUsage())
 		{
-			case EMAIL_VERIFICATION -> emailService
-					.sendVerificationEmail(req.getCredential(), req.getCode())
+			case EMAIL_VERIFICATION -> emailService.sendVerificationEmail(req.getCredential(), req.getCode())
 					.then()
 					.subscribe();
 			case PHONE_VERIFICATION -> throw new UnsupportedOperationException("SMS sender not implemented yet");
@@ -259,25 +244,16 @@ public class AuthenticationService implements AuthPort
 		{
 			user.clearVerificationRequest();
 
-			return userRepository
-					.save(user)
+			return userRepository.save(user)
 					.flatMap(savedUser -> Mono.error(new AccountAlreadyVerifiedException()));
 		}
 
 		Wallet newWallet = walletDomainService.createWallet(user.getId(), "Personal", "Personal wallet");
 		DebitAccount newAccount = accountDomainService.createDebitAccount("Personal", "Personal account");
-
 		newWallet.linkAccount(newAccount);
 
-//		String accountId = new ObjectId().toString();
-//		String walletId = new ObjectId().toString();
-//		Wallet newWallet = Wallet.defaultWallet(walletId, user.getId());
-//		Account newAccount = Account.defaultAccount(accountId, walletId);
-//		newWallet.setAccounts(List.of(accountId));
-
 		return accountRepository.save(newAccount)
-				.flatMap(savedAccount -> walletRepository
-						.save(newWallet)
+				.flatMap(savedAccount -> walletRepository.save(newWallet)
 						.flatMap(savedWallet -> {
 							user.setWallets(new HashSet<>(List.of(savedWallet.getId())));
 							user.setActive(true);
@@ -293,5 +269,4 @@ public class AuthenticationService implements AuthPort
 		userVerificationService.completeRequest(user);
 		return userRepository.save(user);
 	}
-
 }

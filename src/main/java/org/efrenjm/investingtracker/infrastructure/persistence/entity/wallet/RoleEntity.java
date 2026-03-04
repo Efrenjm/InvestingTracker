@@ -8,6 +8,7 @@ import org.efrenjm.investingtracker.domain.model.wallet.Role;
 import org.efrenjm.investingtracker.infrastructure.persistence.utils.MongoUtils;
 import org.springframework.data.mongodb.core.mapping.Field;
 
+import java.util.Optional;
 import java.util.Set;
 
 @AllArgsConstructor
@@ -38,7 +39,7 @@ public class RoleEntity extends AuditableModel
 	{
 		return Role.builder()
 				.description(description)
-				.permissions(permissions.toDomain())
+				.permissions(Optional.ofNullable(permissions).map(PermissionsEntity::toDomain).orElse(null))
 				.members(MongoUtils.collectIds(members))
 				.build();
 	}
@@ -73,11 +74,11 @@ public class RoleEntity extends AuditableModel
 		public Role.Permissions toDomain()
 		{
 			return Role.Permissions.builder()
-					.accounts(accounts.toDomain())
-					.transactions(transactions.toDomain())
-					.rules(rules.toDomain())
-					.members(members.toDomain())
-					.wallet(wallet.toDomain())
+					.accounts(Optional.ofNullable(accounts).map(EntityCRUDPermissions::toDomain).orElse(null))
+					.transactions(Optional.ofNullable(transactions).map(EntityCRUDPermissions::toDomain).orElse(null))
+					.rules(Optional.ofNullable(rules).map(EntityCRUDPermissions::toDomain).orElse(null))
+					.members(Optional.ofNullable(members).map(EntityCRUDPermissions::toDomain).orElse(null))
+					.wallet(Optional.ofNullable(wallet).map(EntityRUDPermissions::toDomain).orElse(null))
 					.build();
 		}
 

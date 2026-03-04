@@ -48,7 +48,9 @@ public class WalletEntity extends AuditableMongoEntity
 				.description(description)
 				.roles(CollectionTransformer.transformMapValues(roles, RoleEntity::toDomain))
 				.accounts(MongoUtils.collectIds(accounts))
-				.configuration(configuration.toDomain())
+				.configuration(Optional.ofNullable(configuration)
+						.map(WalletConfigEntity::toDomain)
+						.orElse(null))
 				.build();
 	}
 }

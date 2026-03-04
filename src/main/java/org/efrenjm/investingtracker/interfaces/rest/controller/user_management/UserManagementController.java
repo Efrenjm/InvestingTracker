@@ -5,7 +5,7 @@
 //import org.efrenjm.investingtracker.infrastructure.persistence.redis.UserSession;
 //import org.efrenjm.investingtracker.interfaces.annotations.AuthUser;
 //import org.efrenjm.investingtracker.application.dto.controller.user_management.Profile;
-//import org.efrenjm.investingtracker.application.dto.controller.user_management.ProfileUpdateRequestDTO;
+//import org.efrenjm.investingtracker.interfaces.rest.controller.user_management.dto.ProfileUpdateRequestDTO;
 //import org.efrenjm.investingtracker.domain.dto.WalletSummary;
 //import org.efrenjm.investingtracker.domain.dto.PublicProfile;
 //import org.efrenjm.investingtracker.application.service.user_service.UserService;

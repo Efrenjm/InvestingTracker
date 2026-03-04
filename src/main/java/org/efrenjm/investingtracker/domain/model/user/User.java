@@ -3,6 +3,8 @@ package org.efrenjm.investingtracker.domain.model.user;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.efrenjm.investingtracker.domain.model.BaseModel;
+import org.efrenjm.investingtracker.domain.model.user.exceptions.FriendRequestNotFoundException;
+import org.efrenjm.investingtracker.domain.model.user.exceptions.NotFriendsException;
 import org.efrenjm.investingtracker.domain.model.user.exceptions.PendingFriendRequestException;
 import org.efrenjm.investingtracker.domain.model.user.exceptions.WalletAlreadyLinkedToUserException;
 import org.efrenjm.investingtracker.domain.model.user.exceptions.WalletNotLinkedToUserException;
@@ -99,71 +101,6 @@ public class User extends BaseModel
 		verificationRequest = null;
 	}
 
-//	public void setUsername(String username)
-//	{
-//		touchModel(this.username, username);
-//		this.username = username;
-//	}
-//
-//	public void setEmail(String email)
-//	{
-//		touchModel(this.email, email);
-//		this.email = email;
-//	}
-//
-//	public void setPhoneNumber(String phoneNumber)
-//	{
-//		touchModel(this.phoneNumber, phoneNumber);
-//		this.phoneNumber = phoneNumber;
-//	}
-//
-//	public void setPassword(String password)
-//	{
-//		touchModel(this.password, password);
-//		this.password = password;
-//	}
-//
-//	public void setActive(boolean active)
-//	{
-//		touchModel(this.active, active);
-//		this.active = active;
-//	}
-//
-//	public void setRoles(Set<SystemRole> roles)
-//	{
-//		touchModel(this.roles, roles);
-//		this.roles = roles == null ? new HashSet<>() : roles;
-//	}
-//
-//	public void setFirstName(String firstName)
-//	{
-//		touchModel(this.firstName, firstName);
-//		this.firstName = firstName;
-//	}
-//
-//	public void setMiddleName(String middleName)
-//	{
-//		touchModel(this.middleName, middleName);
-//		this.middleName = middleName;
-//	}
-//
-//	public void setLastName(String lastName)
-//	{
-//		touchModel(this.lastName, lastName);
-//		this.lastName = lastName;
-//	}
-//
-//	public void setProfilePicture(String profilePicture)
-//	{
-//		touchModel(this.profilePicture, profilePicture);
-//		this.profilePicture = profilePicture;
-//	}
-//
-//	public void setPreferences(UserPreferences preferences)
-//	{
-//		touchModel(this.preferences, preferences);
-//		this.preferences = preferences;
-//	}
 
 	public void linkWallet(Wallet wallet, String roleName)
 	{
@@ -211,7 +148,7 @@ public class User extends BaseModel
 		String friendId = friend.getId();
 		if (!this.invitedFriends.contains(friendId))
 		{
-			throw new IllegalArgumentException("There is no pending friend request to user with id " + friendId);
+			throw new FriendRequestNotFoundException(friendId, true);
 		}
 		friend.removeFriendInvite(this);
 		this.invitedFriends.remove(friendId);
@@ -223,7 +160,7 @@ public class User extends BaseModel
 		String userId = friend.getId();
 		if (!this.pendingFriends.contains(userId))
 		{
-			throw new IllegalArgumentException("There is no pending friend request from user with id " + userId);
+			throw new FriendRequestNotFoundException(userId, false);
 		}
 		this.pendingFriends.remove(userId);
 		friend.friendInvitationAccepted(this);
@@ -237,7 +174,7 @@ public class User extends BaseModel
 		String userId = friend.getId();
 		if (!this.pendingFriends.contains(userId))
 		{
-			throw new IllegalArgumentException("There is no pending friend request from user with id " + userId);
+			throw new FriendRequestNotFoundException(userId, false);
 		}
 		this.pendingFriends.remove(userId);
 		friend.friendInvitationRejected(this);
@@ -249,7 +186,7 @@ public class User extends BaseModel
 		String userId = friend.getId();
 		if (!this.friends.contains(userId))
 		{
-			throw new IllegalArgumentException("User with id " + userId + " is not a friend of user with id " + this.id);
+			throw new NotFriendsException(this.id, userId);
 		}
 		this.friends.remove(userId);
 		try
@@ -265,11 +202,11 @@ public class User extends BaseModel
 		String friendId = friend.getId();
 		if (this.pendingFriends.contains(friendId))
 		{
-			throw new IllegalArgumentException("There is already a pending friend request from user with id " + friendId);
+			throw new PendingFriendRequestException(false, friendId);
 		}
 		if (this.invitedFriends.contains(friendId))
 		{
-			throw new IllegalArgumentException("There is already a pending friend request to user with id " + friendId);
+			throw new PendingFriendRequestException(true, friendId);
 		}
 		this.invitedFriends.add(friendId);
 	}
@@ -280,7 +217,7 @@ public class User extends BaseModel
 		String friendId = friend.getId();
 		if (!this.pendingFriends.contains(friendId))
 		{
-			throw new IllegalArgumentException("There is no pending friend request from user with id " + friendId);
+			throw new FriendRequestNotFoundException(friendId, false);
 		}
 		this.pendingFriends.remove(friendId);
 	}
@@ -291,7 +228,7 @@ public class User extends BaseModel
 		String friendId = friend.getId();
 		if (!this.invitedFriends.contains(friendId))
 		{
-			throw new IllegalArgumentException("There is no pending friend request to user with id " + friendId);
+			throw new FriendRequestNotFoundException(friendId, true);
 		}
 		this.invitedFriends.remove(friendId);
 		this.friends.add(friendId);
@@ -303,7 +240,7 @@ public class User extends BaseModel
 		String friendId = friend.getId();
 		if (!this.invitedFriends.contains(friendId))
 		{
-			throw new IllegalArgumentException("There is no pending friend request to user with id " + friendId);
+			throw new FriendRequestNotFoundException(friendId, true);
 		}
 		this.invitedFriends.remove(friendId);
 	}

@@ -4,7 +4,6 @@ import java.util.regex.Pattern;
 
 import lombok.RequiredArgsConstructor;
 import org.efrenjm.investingtracker.domain.ports.inbound.ValidationPort;
-import org.efrenjm.investingtracker.infrastructure.utils.ValidationOperations;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -13,7 +12,7 @@ public class ValidationService implements ValidationPort
 {
 	private static final String PASSWORD_PATTERN = "^(?=.*\\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=!?])(?=\\S+$).{8,}$";
 	private static final Pattern pattern = Pattern.compile(PASSWORD_PATTERN);
-	private final ValidationOperations validationOperations;
+	private final org.efrenjm.investingtracker.domain.ports.outbound.utils.ValidationPort validationOperations;
 
 	public boolean isValidEmail(String possibleEmail)
 	{

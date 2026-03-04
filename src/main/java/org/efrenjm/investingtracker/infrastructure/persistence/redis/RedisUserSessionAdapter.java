@@ -1,6 +1,7 @@
 package org.efrenjm.investingtracker.infrastructure.persistence.redis;
 
 import lombok.RequiredArgsConstructor;
+import org.efrenjm.investingtracker.domain.dto.Profile;
 import org.efrenjm.investingtracker.domain.ports.outbound.security.SessionPort;
 import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.stereotype.Service;
@@ -16,16 +17,18 @@ public class RedisUserSessionAdapter implements SessionPort
 
 	private final ReactiveRedisTemplate<String, UserSession> redisTemplate;
 
-	public Mono<UserSession> getUserSession(String userId)
+	public Mono<Profile> getUserSession(String userId)
 	{
 		return redisTemplate
 				.opsForValue()
 				.get(SESSION_KEY_PREFIX + userId)
-				.cast(UserSession.class);
+				.cast(UserSession.class)
+				.map(UserSession::toProfile);
 	}
 
-	public Mono<Boolean> storeUserSession(String userId, UserSession userSession, Duration expiration)
+	public Mono<Boolean> storeUserSession(String userId, Profile profile, Duration expiration)
 	{
+		UserSession userSession = UserSession.fromProfile(profile);
 		return redisTemplate
 				.opsForValue()
 				.set(SESSION_KEY_PREFIX + userId, userSession)

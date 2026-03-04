@@ -1,9 +1,9 @@
 package org.efrenjm.investingtracker.domain.service;
 
 import lombok.RequiredArgsConstructor;
-import org.efrenjm.investingtracker.application.service.authentication.exceptions.*;
 import org.efrenjm.investingtracker.domain.model.user.CodeUsage;
 import org.efrenjm.investingtracker.domain.model.user.User;
+import org.efrenjm.investingtracker.domain.model.user.exceptions.*;
 import org.efrenjm.investingtracker.domain.ports.inbound.ValidationPort;
 import org.efrenjm.investingtracker.domain.ports.outbound.security.PasswordEncoderPort;
 import org.springframework.stereotype.Service;

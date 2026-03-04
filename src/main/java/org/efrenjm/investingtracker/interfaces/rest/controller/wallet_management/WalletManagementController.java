@@ -1,7 +1,6 @@
 package org.efrenjm.investingtracker.interfaces.rest.controller.wallet_management;
 
 import lombok.RequiredArgsConstructor;
-import org.bson.types.ObjectId;
 import org.efrenjm.investingtracker.domain.dto.WalletSummary;
 import org.efrenjm.investingtracker.domain.model.wallet.Wallet;
 import org.springframework.web.bind.annotation.*;
@@ -19,7 +18,7 @@ public class WalletManagementController {
 	}
 
 	@GetMapping("/{walletId}")
-	public Mono<Wallet> getWallet(@PathVariable ObjectId walletId) {
+	public Mono<Wallet> getWallet(@PathVariable String walletId) {
 		return null;
 	}
 
@@ -29,12 +28,12 @@ public class WalletManagementController {
 	}
 
 	@PutMapping("/{walletId}")
-	public Mono<Wallet> updateWallet(@PathVariable ObjectId walletId, Wallet wallet) {
+	public Mono<Wallet> updateWallet(@PathVariable String walletId, Wallet wallet) {
 		return null;
 	}
 
 	@DeleteMapping("/{walletId}")
-	public Mono<Void> deleteWallet(@PathVariable ObjectId walletId) {
+	public Mono<Void> deleteWallet(@PathVariable String walletId) {
 		return null;
 	}
 }

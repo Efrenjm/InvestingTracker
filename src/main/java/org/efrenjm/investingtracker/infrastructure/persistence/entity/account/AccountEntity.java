@@ -116,7 +116,7 @@ public class AccountEntity extends AuditableMongoEntity
 				.type(type)
 				.available(available)
 				.tags(tags)
-				.accountConfig(accountConfig != null ? accountConfig.toDomain() : null)
+				.accountConfig(Optional.ofNullable(accountConfig).map(EntityAccountConfig::toDomain).orElse(null))
 				.rules(MongoUtils.collectIds(rules));
 		return populateAuditableDomainFields(builder).build();
 	}

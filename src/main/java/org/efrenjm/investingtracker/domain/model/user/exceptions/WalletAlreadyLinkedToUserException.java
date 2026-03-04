@@ -1,6 +1,8 @@
 package org.efrenjm.investingtracker.domain.model.user.exceptions;
 
-public class WalletAlreadyLinkedToUserException extends RuntimeException
+import org.efrenjm.investingtracker.domain.exception.ConflictException;
+
+public class WalletAlreadyLinkedToUserException extends ConflictException
 {
 	public WalletAlreadyLinkedToUserException(String walletId, String userId)
 	{

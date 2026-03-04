@@ -1,5 +1,7 @@
 package org.efrenjm.investingtracker.interfaces.web.advice;
 
+import org.efrenjm.investingtracker.domain.exception.BadRequestException;
+import org.efrenjm.investingtracker.domain.exception.ConflictException;
 import org.efrenjm.investingtracker.domain.exception.ResourceNotFoundException;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
@@ -28,8 +30,18 @@ public class GlobalExceptionHandler {
 		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorMessage);
 	}
 
+	@ExceptionHandler(BadRequestException.class)
+	public ResponseEntity<String> handleBadRequest(BadRequestException ex) {
+		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
+	}
+
+	@ExceptionHandler(ConflictException.class)
+	public ResponseEntity<String> handleConflict(ConflictException ex) {
+		return ResponseEntity.status(HttpStatus.CONFLICT).body(ex.getMessage());
+	}
+
 	@ExceptionHandler(ResourceNotFoundException.class)
-	public ResponseEntity<String> resourceNotFoundError(Exception ex) {
+	public ResponseEntity<String> resourceNotFoundError(ResourceNotFoundException ex) {
 		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
 	}
 }

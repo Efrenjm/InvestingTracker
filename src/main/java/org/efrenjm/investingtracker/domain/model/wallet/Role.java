@@ -3,6 +3,8 @@ package org.efrenjm.investingtracker.domain.model.wallet;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.efrenjm.investingtracker.domain.model.AuditableModel;
+import org.efrenjm.investingtracker.domain.model.wallet.exceptions.MemberAlreadyInRoleException;
+import org.efrenjm.investingtracker.domain.model.wallet.exceptions.MemberNotInRoleException;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -29,7 +31,7 @@ public class Role extends AuditableModel
         }
         if (members.contains(member))
         {
-            throw new IllegalArgumentException("member: " + member + "already exists in this role");
+            throw new MemberAlreadyInRoleException(member);
         }
         members.add(member);
     }
@@ -42,7 +44,7 @@ public class Role extends AuditableModel
         }
         if (!members.contains(member))
         {
-            throw new IllegalArgumentException("member: " + member + "doesn't exist in this role");
+            throw new MemberNotInRoleException(member);
         }
         members.remove(member);
     }

@@ -4,6 +4,10 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.efrenjm.investingtracker.domain.model.AuditableModel;
 import org.efrenjm.investingtracker.domain.model.account.BaseAccount;
+import org.efrenjm.investingtracker.domain.model.wallet.exceptions.AccountLinkedToAnotherWalletException;
+import org.efrenjm.investingtracker.domain.model.wallet.exceptions.AccountNotLinkedToWallet;
+import org.efrenjm.investingtracker.domain.model.wallet.exceptions.MemberNotInWalletException;
+import org.efrenjm.investingtracker.domain.model.wallet.exceptions.RoleAlreadyExistsException;
 import org.efrenjm.investingtracker.domain.model.wallet.exceptions.RoleNameNotFoundException;
 
 import java.util.*;
@@ -42,18 +46,6 @@ public class Wallet extends AuditableModel
         return Optional.ofNullable(configuration);
     }
 
-//    public void setName(String name, String updaterUserId)
-//    {
-//        this.name = name;
-//        touchModel(updaterUserId);
-//    }
-//
-//    public void setDescription(String description, String updaterUserId)
-//    {
-//        this.description = description;
-//        touchModel(updaterUserId);
-//    }
-
     public void addMemberToRole(String roleName, String userId)
     {
         if (!roles.containsKey(roleName))
@@ -77,7 +69,7 @@ public class Wallet extends AuditableModel
         Optional<String> roleName = findRoleOfUser(userId);
         if (roleName.isEmpty())
         {
-            throw new IllegalArgumentException("User with ID " + userId + " is not assigned to any role in this wallet.");
+            throw new MemberNotInWalletException(userId);
         }
         roles.computeIfPresent(roleName.get(), (key, role) -> {
             role.removeMember(userId);
@@ -99,7 +91,7 @@ public class Wallet extends AuditableModel
     {
         if (roles.containsKey(roleName))
         {
-            throw new IllegalArgumentException(roleName + "role already exist in this wallet");
+            throw new RoleAlreadyExistsException(roleName);
         }
         roles.put(roleName, role);
     }
@@ -116,32 +108,33 @@ public class Wallet extends AuditableModel
 
     public void linkAccount(BaseAccount newAccount)
     {
-        if (accounts == null)
-        {
-            accounts = new HashSet<>();
-        }
+        ensureAccountsSet();
         String accountId = newAccount.getId();
-        if (accounts.contains(accountId))
+        if (newAccount.getWalletId() != null && !newAccount.getWalletId().equals(this.id))
         {
-            throw new IllegalArgumentException("Account with ID " + accountId + " already exists in the wallet.");
+            throw new AccountLinkedToAnotherWalletException(accountId);
         }
-
         accounts.add(accountId);
         newAccount.setWalletId(this.id);
     }
 
     public void unlinkAccount(BaseAccount accountToUnlink)
     {
-        if (accounts == null)
-        {
-            accounts = new HashSet<>();
-        }
+        ensureAccountsSet();
         String accountId = accountToUnlink.getId();
         if (!accounts.contains(accountId)) {
-            throw new IllegalArgumentException("Account with ID " + accountId + " doesn't belong to the wallet.");
+            throw new AccountNotLinkedToWallet(accountId, this.id);
         }
 
         accounts.remove(accountId);
         accountToUnlink.setWalletId(null);
+    }
+
+    private void ensureAccountsSet()
+    {
+        if (accounts == null)
+        {
+            accounts = new HashSet<>();
+        }
     }
 }

@@ -1,6 +1,8 @@
 package org.efrenjm.investingtracker.domain.model.wallet.exceptions;
 
-public class CategoryNotFound extends RuntimeException
+import org.efrenjm.investingtracker.domain.exception.ResourceNotFoundException;
+
+public class CategoryNotFound extends ResourceNotFoundException
 {
 	public CategoryNotFound(String name)
 	{

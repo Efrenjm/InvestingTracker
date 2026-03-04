@@ -78,7 +78,8 @@ public class UserEntity extends BaseMongoEntity
                 .password(password)
                 .active(active)
                 .verificationRequest(Optional.ofNullable(verificationRequest)
-                        .map(EntityVerificationRequest::toDomain).orElse(null))
+                        .map(EntityVerificationRequest::toDomain)
+                        .orElse(null))
                 .roles(Optional.ofNullable(roles).orElse(new HashSet<>()))
                 .firstName(firstName)
                 .middleName(middleName)
@@ -88,7 +89,9 @@ public class UserEntity extends BaseMongoEntity
                 .friends(MongoUtils.collectIds(friends))
                 .pendingFriends(MongoUtils.collectIds(pendingFriends))
                 .invitedFriends(MongoUtils.collectIds(invitedFriends))
-                .preferences(preferences != null ? preferences.toDomain() : null)
+                .preferences(Optional.ofNullable(preferences)
+                        .map(UserEntityPreferences::toDomain)
+                        .orElse(null))
                 .lastLogin(lastLogin)
                 .build();
     }

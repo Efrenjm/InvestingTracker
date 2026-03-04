@@ -1,6 +1,6 @@
 package org.efrenjm.investingtracker.domain.ports.inbound;
 
-import org.efrenjm.investingtracker.application.dto.controller.user_management.ProfileUpdateRequestDTO;
+import org.efrenjm.investingtracker.domain.dto.ProfileUpdateCommand;
 import org.efrenjm.investingtracker.domain.dto.PublicProfile;
 import org.efrenjm.investingtracker.domain.dto.WalletSummary;
 import org.efrenjm.investingtracker.domain.model.user.User;
@@ -9,7 +9,7 @@ import reactor.core.publisher.Mono;
 
 public interface UserPort
 {
-	Mono<User> updateProfile(User user, ProfileUpdateRequestDTO updateRequest);
+	Mono<User> updateProfile(User user, ProfileUpdateCommand command);
 
 	Mono<Void> deleteUser(User user);
 

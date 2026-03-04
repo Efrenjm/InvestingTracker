@@ -5,9 +5,12 @@ import lombok.experimental.SuperBuilder;
 import org.bson.types.ObjectId;
 import org.efrenjm.investingtracker.domain.model.BaseModel;
 import org.efrenjm.investingtracker.infrastructure.persistence.utils.MongoUtils;
+import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.mongodb.core.mapping.Field;
 
+import java.time.Instant;
 import java.util.Date;
 
 @AllArgsConstructor
@@ -20,8 +23,12 @@ public abstract class BaseMongoEntity
 {
 	@Id
 	@Field("_id") protected ObjectId id;
-	@Field("created_at") protected Date createdAt;
-	@Field("updated_at") protected Date updatedAt;
+
+	@CreatedDate
+	@Field("created_at") protected Instant createdAt;
+
+	@LastModifiedDate
+	@Field("updated_at") protected Instant updatedAt;
 
 	public static <B extends BaseMongoEntityBuilder<?, ?>, D extends BaseModel> B populateBaseEntityFields(B builder, D domainObject)
 	{
@@ -30,8 +37,8 @@ public abstract class BaseMongoEntity
 
 		builder
 				.id(MongoUtils.idToEntity(domainObject.getId()))
-				.createdAt(domainObject.getCreatedAt())
-				.updatedAt(domainObject.getUpdatedAt());
+				.createdAt(domainObject.getCreatedAt() != null ? domainObject.getCreatedAt().toInstant() : null)
+				.updatedAt(domainObject.getUpdatedAt() != null ? domainObject.getUpdatedAt().toInstant() : null);
 		return builder;
 	}
 
@@ -42,8 +49,8 @@ public abstract class BaseMongoEntity
 
 		builder
 				.id(MongoUtils.idToDomain(id))
-				.createdAt(createdAt)
-				.updatedAt(updatedAt);
+				.createdAt(createdAt != null ? Date.from(createdAt) : null)
+				.updatedAt(updatedAt != null ? Date.from(updatedAt) : null);
 		return builder;
 	}
 }

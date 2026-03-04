@@ -1,6 +1,8 @@
 package org.efrenjm.investingtracker.domain.model.wallet.exceptions;
 
-public class CategoryExistsAlready extends RuntimeException
+import org.efrenjm.investingtracker.domain.exception.ConflictException;
+
+public class CategoryExistsAlready extends ConflictException
 {
 	public CategoryExistsAlready(String name)
 	{

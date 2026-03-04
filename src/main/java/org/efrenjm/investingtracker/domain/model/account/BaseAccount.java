@@ -3,6 +3,10 @@ package org.efrenjm.investingtracker.domain.model.account;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.efrenjm.investingtracker.domain.model.AuditableModel;
+import org.efrenjm.investingtracker.domain.model.account.exceptions.TagAlreadyExistsException;
+import org.efrenjm.investingtracker.domain.model.account.exceptions.TagNotFoundException;
+import org.efrenjm.investingtracker.domain.model.account.exceptions.WalletAlreadySharingAccountException;
+import org.efrenjm.investingtracker.domain.model.account.exceptions.WalletNotSharingAccountException;
 
 import java.util.*;
 
@@ -52,69 +56,45 @@ public abstract class BaseAccount extends AuditableModel
 		return Optional.ofNullable(rules);
 	}
 
-//	public void setName(String name, String updaterUserId)
-//	{
-//		this.name = name;
-//		touchAccount(updaterUserId);
-//	}
-//
-//	public void setDescription(String description, String updaterUserId)
-//	{
-//		this.description = description;
-//		touchAccount(updaterUserId);
-//	}
-//
-//	public void setWalletId(String walletId, String updaterUserId)
-//	{
-//		this.walletId = walletId;
-//		touchAccount(updaterUserId);
-//	}
-
-	public void addSharingWallet(String walletId, String updaterUserId)
+	public void addSharingWallet(String walletId)
 	{
 		ensureSharingWallets();
 		if (sharingWallets.contains(walletId))
 		{
-			throw new IllegalArgumentException("Wallet " + walletId + " already has view access to this account.");
+			throw new WalletAlreadySharingAccountException(walletId);
 		}
 
 		sharingWallets.add(walletId);
 	}
 
-	public void removeSharingWallet(String walletId, String updaterUserId)
+	public void removeSharingWallet(String walletId)
 	{
 		ensureSharingWallets();
 		if (!sharingWallets.contains(walletId))
 		{
-			throw new IllegalArgumentException("Wallet " + walletId + " don't have view access to this account.");
+			throw new WalletNotSharingAccountException(walletId);
 		}
 
 		sharingWallets.remove(walletId);
 	}
 
-//	public void setAvailable(Double available, String updaterUserId)
-//	{
-//		this.available = available;
-//		touchAccount(updaterUserId);
-//	}
-
-	public void addTag(String tag, String updaterUserId)
+	public void addTag(String tag)
 	{
 		ensureTags();
 		if (tags.contains(tag))
 		{
-			throw new IllegalArgumentException("Tag " + tag + " already exists in the account.");
+			throw new TagAlreadyExistsException(tag);
 		}
 
 		tags.add(tag);
 	}
 
-	public void removeTag(String tag, String updaterUserId)
+	public void removeTag(String tag)
 	{
 		ensureTags();
 		if (!tags.contains(tag))
 		{
-			throw new IllegalArgumentException("Tag " + tag + " doesn't exist in the account.");
+			throw new TagNotFoundException(tag);
 		}
 
 		tags.remove(tag);

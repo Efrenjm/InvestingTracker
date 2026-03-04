@@ -3,10 +3,7 @@ package org.efrenjm.investingtracker.domain.ports.inbound;
 import org.efrenjm.investingtracker.domain.dto.Profile;
 import org.efrenjm.investingtracker.domain.model.user.User;
 import org.efrenjm.investingtracker.domain.model.utils.SystemRole;
-import org.efrenjm.investingtracker.infrastructure.persistence.redis.UserSession;
 import org.springframework.http.server.reactive.ServerHttpResponse;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
 import reactor.core.publisher.Mono;
 
 import java.util.Set;
