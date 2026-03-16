@@ -1,5 +1,6 @@
 package org.efrenjm.investingtracker.infrastructure.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.efrenjm.investingtracker.infrastructure.persistence.redis.UserSession;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -13,9 +14,13 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 public class RedisConfig
 {
 	@Bean
-	public ReactiveRedisTemplate<String, UserSession> reactiveRedisTemplate(ReactiveRedisConnectionFactory factory)
+	public ReactiveRedisTemplate<String, UserSession> reactiveRedisTemplate(
+			ReactiveRedisConnectionFactory factory,
+			ObjectMapper objectMapper
+	)
 	{
-		Jackson2JsonRedisSerializer<UserSession> serializer = new Jackson2JsonRedisSerializer<>(UserSession.class);
+		Jackson2JsonRedisSerializer<UserSession> serializer =
+				new Jackson2JsonRedisSerializer<>(objectMapper, UserSession.class);
 
 		RedisSerializationContext<String, UserSession> context =
 				RedisSerializationContext.<String, UserSession>newSerializationContext()
