@@ -3,12 +3,13 @@ package org.efrenjm.investingtracker.application.service.authentication;
 import org.bson.types.ObjectId;
 import org.efrenjm.investingtracker.application.service.authentication.exceptions.InvalidCredentialsException;
 import org.efrenjm.investingtracker.application.service.authentication.exceptions.RegistrationNotCompletedException;
+import org.efrenjm.investingtracker.domain.dto.UserIdentity;
 import org.efrenjm.investingtracker.domain.model.account.DebitAccount;
 import org.efrenjm.investingtracker.domain.model.user.CodeUsage;
 import org.efrenjm.investingtracker.domain.model.user.User;
 import org.efrenjm.investingtracker.domain.model.user.VerificationRequest;
 import org.efrenjm.investingtracker.domain.model.user.exceptions.CodeExpiredException;
-import org.efrenjm.investingtracker.application.service.authentication.exceptions.InvalidOldPasswordException;
+import org.efrenjm.investingtracker.domain.model.user.exceptions.InvalidPasswordException;
 import org.efrenjm.investingtracker.domain.model.wallet.Wallet;
 import org.efrenjm.investingtracker.domain.ports.inbound.EmailPort;
 import org.efrenjm.investingtracker.domain.ports.inbound.SecurityPort;
@@ -16,6 +17,7 @@ import org.efrenjm.investingtracker.domain.ports.inbound.ValidationPort;
 import org.efrenjm.investingtracker.domain.ports.outbound.repository.AccountRepositoryPort;
 import org.efrenjm.investingtracker.domain.ports.outbound.repository.UserRepositoryPort;
 import org.efrenjm.investingtracker.domain.ports.outbound.repository.WalletRepositoryPort;
+import org.efrenjm.investingtracker.domain.ports.outbound.security.SessionPort;
 import org.efrenjm.investingtracker.domain.service.AccountDomainService;
 import org.efrenjm.investingtracker.domain.service.UserDomainService;
 import org.efrenjm.investingtracker.domain.service.UserVerificationService;
@@ -61,6 +63,8 @@ class AuthenticationServiceTest {
 	@Mock
 	private SecurityPort securityService;
 	@Mock
+	private SessionPort sessionService;
+	@Mock
 	private TransactionalOperator transactionalOperator;
 	@Mock
 	private ServerWebExchange exchange;
@@ -101,6 +105,21 @@ class AuthenticationServiceTest {
 
 		verify(securityService).generateToken(user);
 		verify(securityService).setTokenInCookie(eq(token), any());
+	}
+
+	@Test
+	void logout_ValidIdentity_InvalidatesSessionAndClearsCookie() {
+		String userId = new ObjectId().toString();
+		UserIdentity userIdentity = new UserIdentity(userId, java.util.Set.of());
+
+		when(sessionService.invalidateSession(userId)).thenReturn(Mono.just(true));
+		when(securityService.clearTokenCookie(any())).thenReturn(Mono.empty());
+
+		StepVerifier.create(authService.logout(userIdentity, exchange))
+				.verifyComplete();
+
+		verify(sessionService).invalidateSession(userId);
+		verify(securityService).clearTokenCookie(eq(response));
 	}
 
 	@Test
@@ -408,10 +427,10 @@ class AuthenticationServiceTest {
 				.build();
 
 		when(userDomainService.updatePassword(user, newPassword, oldPassword))
-				.thenThrow(new InvalidOldPasswordException());
+				.thenThrow(new InvalidPasswordException());
 
 		// The exception is thrown synchronously before a Mono is created
-		assertThrows(InvalidOldPasswordException.class,
+		assertThrows(InvalidPasswordException.class,
 				() -> authService.updatePassword(user, newPassword, oldPassword));
 	}
 }
