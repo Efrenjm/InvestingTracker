@@ -41,3 +41,22 @@ spring:
             enable: true
 app:
   base_url: ${BASE_URL}
+  security:
+    cors:
+      enabled: true
+      path-pattern: "/**"
+      allowed-origins:
+        - ${FRONTEND_ORIGIN}
+      allowed-methods:
+        - "GET"
+        - "POST"
+        - "PUT"
+        - "PATCH"
+        - "DELETE"
+        - "OPTIONS"
+      allowed-headers:
+        - "*"
+      exposed-headers:
+        - "Set-Cookie"
+      allow-credentials: true
+      max-age-seconds: 1800
