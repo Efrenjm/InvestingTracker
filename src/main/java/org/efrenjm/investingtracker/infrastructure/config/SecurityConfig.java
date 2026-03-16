@@ -70,7 +70,10 @@ public class SecurityConfig
 								"/auth/register",
 								"/auth/refresh-code",
 								"/auth/verify-code",
-								"/auth/forgot-password"
+								"/auth/forgot-password",
+								"/v3/api-docs/**",
+								"/swagger-ui/**",
+								"/swagger-ui.html"
 						)
 						.permitAll()
 						.anyExchange()

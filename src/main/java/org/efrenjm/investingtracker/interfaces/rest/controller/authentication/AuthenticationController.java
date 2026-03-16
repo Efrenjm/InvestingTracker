@@ -1,5 +1,14 @@
 package org.efrenjm.investingtracker.interfaces.rest.controller.authentication;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.headers.Header;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.efrenjm.investingtracker.domain.dto.UserIdentity;
@@ -18,6 +27,7 @@ import reactor.core.publisher.Mono;
 
 import java.net.URI;
 
+@Tag(name = "Authentication", description = "Authentication and verification endpoints")
 @RestController
 @AllArgsConstructor
 @RequestMapping("/auth")
@@ -25,13 +35,49 @@ public class AuthenticationController
 {
 	private final AuthPort authenticationService;
 
+	@Operation(
+			summary = "Login with username and password",
+			description = "Authenticates the user and sets a JWT cookie in the HTTP response."
+	)
+	@ApiResponses({
+			@ApiResponse(
+					responseCode = "200",
+					description = "Login successful; JWT cookie set",
+					headers = {
+							@Header(name = "Set-Cookie", description = "HTTP-only cookie named jwt containing the access token")
+					}
+			),
+			@ApiResponse(responseCode = "400", description = "Invalid request body", content = @Content(mediaType = "text/plain")),
+			@ApiResponse(responseCode = "401", description = "Invalid credentials", content = @Content(mediaType = "text/plain"))
+	})
+	@io.swagger.v3.oas.annotations.parameters.RequestBody(
+			required = true,
+			description = "Credentials used to authenticate a user.",
+			content = @Content(
+					mediaType = "application/json",
+					schema = @Schema(implementation = UserPasswordDTO.class),
+					examples = {
+							@ExampleObject(name = "Email login", value = "{\"username\":\"john.doe@email.com\",\"password\":\"Str0ngP@ss!\"}"),
+							@ExampleObject(name = "Phone login", value = "{\"username\":\"+526611234567\",\"password\":\"Str0ngP@ss!\"}")
+					}
+			)
+	)
 	@PostMapping("/login")
-	public Mono<ResponseEntity<Void>> login(@Valid @RequestBody UserPasswordDTO req, ServerWebExchange exchange)
+	public Mono<ResponseEntity<Void>> login(@Valid @RequestBody UserPasswordDTO req,
+	                                       @Parameter(hidden = true) ServerWebExchange exchange)
 	{
 		return authenticationService.login(req.getUsername(), req.getPassword(), exchange)
 				.thenReturn(ResponseEntity.ok().build());
 	}
 
+	@Operation(
+			summary = "Logout",
+			description = "Ends the current session by clearing JWT cookie and invalidating the cached Redis session."
+	)
+	@ApiResponses({
+			@ApiResponse(responseCode = "204", description = "Logout successful; JWT cookie removed"),
+			@ApiResponse(responseCode = "401", description = "Authentication required", content = @Content(mediaType = "text/plain"))
+	})
 	@PostMapping("/logout")
 	public Mono<ResponseEntity<Void>> logout(@Parameter(hidden = true) @AuthUser UserIdentity user,
 	                                        @Parameter(hidden = true) ServerWebExchange exchange)
@@ -40,6 +86,28 @@ public class AuthenticationController
 				.thenReturn(ResponseEntity.noContent().build());
 	}
 
+	@Operation(
+			summary = "Register a new user",
+			description = "Creates a user account and returns verification context."
+	)
+	@ApiResponses({
+			@ApiResponse(
+					responseCode = "201",
+					description = "User registered",
+					content = @Content(mediaType = "application/json", schema = @Schema(implementation = RegisterResponseDTO.class))
+			),
+			@ApiResponse(responseCode = "400", description = "Validation error", content = @Content(mediaType = "text/plain")),
+			@ApiResponse(responseCode = "409", description = "User already exists", content = @Content(mediaType = "text/plain"))
+	})
+	@io.swagger.v3.oas.annotations.parameters.RequestBody(
+			required = true,
+			description = "Registration data for a new user account.",
+			content = @Content(
+					mediaType = "application/json",
+					schema = @Schema(implementation = UserPasswordDTO.class),
+					examples = @ExampleObject(value = "{\"username\":\"john.doe@email.com\",\"password\":\"Str0ngP@ss!\"}")
+			)
+	)
 	@PostMapping("/register")
 	public Mono<ResponseEntity<RegisterResponseDTO>> register(@Valid @RequestBody UserPasswordDTO req)
 	{
@@ -48,9 +116,20 @@ public class AuthenticationController
 						.body(new RegisterResponseDTO(user)));
 	}
 
+	@Operation(
+			summary = "Refresh verification code",
+			description = "Generates and sends a new verification code. If the caller is authenticated, userId is optional. If the caller is anonymous, userId is required."
+	)
+	@ApiResponses({
+			@ApiResponse(responseCode = "200", description = "Verification code refreshed"),
+			@ApiResponse(responseCode = "400", description = "Missing user information or refresh is temporarily disabled", content = @Content(mediaType = "text/plain")),
+			@ApiResponse(responseCode = "404", description = "User not found", content = @Content(mediaType = "text/plain"))
+	})
 	@GetMapping("/refresh-code")
-	public Mono<ResponseEntity<String>> refreshVerificationCode(@RequestParam(required = false) String userId,
-	                                                            @AuthUser User user)
+	public Mono<ResponseEntity<String>> refreshVerificationCode(
+			@Parameter(description = "User identifier for anonymous calls. Omit when authenticated.", example = "67d2f18d8b17c24e3fe46ed1")
+			@RequestParam(required = false) String userId,
+			@Parameter(hidden = true) @AuthUser User user)
 	{
 				Mono<User> strategy;
 				if (user == null)
@@ -68,9 +147,35 @@ public class AuthenticationController
 				return strategy.map(res -> ResponseEntity.ok().build());
 	}
 
+	@Operation(
+			summary = "Verify one-time code",
+			description = "Validates a one-time code and completes the pending verification flow. If the caller is authenticated, userId can be omitted from the request body."
+	)
+	@ApiResponses({
+			@ApiResponse(
+					responseCode = "200",
+					description = "Code verified successfully",
+					content = @Content(mediaType = "application/json", schema = @Schema(implementation = VerifyCodeResponseDTO.class))
+			),
+			@ApiResponse(responseCode = "400", description = "Invalid or expired code, or bad request payload", content = @Content(mediaType = "text/plain")),
+			@ApiResponse(responseCode = "404", description = "User not found", content = @Content(mediaType = "text/plain")),
+			@ApiResponse(responseCode = "409", description = "Account already verified or conflicting state", content = @Content(mediaType = "text/plain"))
+	})
+	@io.swagger.v3.oas.annotations.parameters.RequestBody(
+			required = true,
+			description = "Verification payload containing the one-time code and optionally the userId.",
+			content = @Content(
+					mediaType = "application/json",
+					schema = @Schema(implementation = VerifyCodeRequestDTO.class),
+					examples = {
+							@ExampleObject(name = "Anonymous verification", value = "{\"userId\":\"67d2f18d8b17c24e3fe46ed1\",\"code\":\"A1B2C3\"}"),
+							@ExampleObject(name = "Authenticated verification", value = "{\"code\":\"A1B2C3\"}")
+					}
+			)
+	)
 	@PostMapping("/verify-code")
 	public Mono<ResponseEntity<VerifyCodeResponseDTO>> verifyCode(@Valid @RequestBody VerifyCodeRequestDTO req,
-	                                                              @AuthUser User user) {
+	                                                              @Parameter(hidden = true) @AuthUser User user) {
 		Mono<User> strategy;
 		if (user == null)
 		{
