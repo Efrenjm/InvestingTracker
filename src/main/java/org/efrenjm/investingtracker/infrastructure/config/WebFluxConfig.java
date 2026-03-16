@@ -1,13 +1,15 @@
 package org.efrenjm.investingtracker.infrastructure.config;
 
+import lombok.RequiredArgsConstructor;
 import org.efrenjm.investingtracker.domain.ports.inbound.SecurityPort;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.reactive.config.WebFluxConfigurer;
 import org.springframework.web.reactive.result.method.annotation.ArgumentResolverConfigurer;
 
 @Configuration
+@RequiredArgsConstructor
 public class WebFluxConfig implements WebFluxConfigurer {
-	SecurityPort securityService;
+	private final SecurityPort securityService;
 
 	@Override
 	public void configureArgumentResolvers(ArgumentResolverConfigurer configurer) {

@@ -2,6 +2,7 @@ package org.efrenjm.investingtracker.interfaces.rest.controller.authentication;
 
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
+import org.efrenjm.investingtracker.domain.dto.UserIdentity;
 import org.efrenjm.investingtracker.domain.model.user.User;
 import org.efrenjm.investingtracker.domain.ports.inbound.AuthPort;
 import org.efrenjm.investingtracker.interfaces.annotations.AuthUser;
@@ -29,6 +30,14 @@ public class AuthenticationController
 	{
 		return authenticationService.login(req.getUsername(), req.getPassword(), exchange)
 				.thenReturn(ResponseEntity.ok().build());
+	}
+
+	@PostMapping("/logout")
+	public Mono<ResponseEntity<Void>> logout(@Parameter(hidden = true) @AuthUser UserIdentity user,
+	                                        @Parameter(hidden = true) ServerWebExchange exchange)
+	{
+		return authenticationService.logout(user, exchange)
+				.thenReturn(ResponseEntity.noContent().build());
 	}
 
 	@PostMapping("/register")

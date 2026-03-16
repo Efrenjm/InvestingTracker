@@ -28,4 +28,6 @@ public interface SecurityPort {
 	Mono<String> generateToken(User user);
 
 	Mono<Void> setTokenInCookie(String token, ServerHttpResponse response);
+
+	Mono<Void> clearTokenCookie(ServerHttpResponse response);
 }

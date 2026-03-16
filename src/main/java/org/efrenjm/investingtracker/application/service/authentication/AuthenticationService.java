@@ -2,17 +2,20 @@ package org.efrenjm.investingtracker.application.service.authentication;
 
 import lombok.RequiredArgsConstructor;
 import org.efrenjm.investingtracker.application.service.authentication.exceptions.*;
+import org.efrenjm.investingtracker.domain.dto.UserIdentity;
 import org.efrenjm.investingtracker.domain.model.account.DebitAccount;
 import org.efrenjm.investingtracker.domain.model.user.CodeUsage;
 import org.efrenjm.investingtracker.domain.model.user.User;
 import org.efrenjm.investingtracker.domain.model.user.VerificationRequest;
 import org.efrenjm.investingtracker.domain.model.user.exceptions.CodeExpiredException;
+import org.efrenjm.investingtracker.domain.model.user.exceptions.InvalidPasswordException;
 import org.efrenjm.investingtracker.domain.model.user.exceptions.NoVerificationInProcessException;
 import org.efrenjm.investingtracker.domain.model.wallet.Wallet;
 import org.efrenjm.investingtracker.domain.ports.inbound.*;
 import org.efrenjm.investingtracker.domain.ports.outbound.repository.AccountRepositoryPort;
 import org.efrenjm.investingtracker.domain.ports.outbound.repository.UserRepositoryPort;
 import org.efrenjm.investingtracker.domain.ports.outbound.repository.WalletRepositoryPort;
+import org.efrenjm.investingtracker.domain.ports.outbound.security.SessionPort;
 import org.efrenjm.investingtracker.domain.service.AccountDomainService;
 import org.efrenjm.investingtracker.domain.service.UserDomainService;
 import org.efrenjm.investingtracker.domain.service.UserVerificationService;
@@ -42,6 +45,7 @@ public class AuthenticationService implements AuthPort
 	private final UserVerificationService userVerificationService;
 	private final EmailPort emailService;
 	private final SecurityPort securityService;
+	private final SessionPort sessionService;
 	private final TransactionalOperator transactionalOperator;
 
 	@Override
@@ -67,6 +71,13 @@ public class AuthenticationService implements AuthPort
 					return securityService.generateToken(user)
 							.flatMap(jwt -> securityService.setTokenInCookie(jwt, exchange.getResponse()));
 				});
+	}
+
+	@Override
+	public Mono<Void> logout(UserIdentity user, ServerWebExchange exchange)
+	{
+		return sessionService.invalidateSession(user.id())
+				.then(securityService.clearTokenCookie(exchange.getResponse()));
 	}
 
 	@Override

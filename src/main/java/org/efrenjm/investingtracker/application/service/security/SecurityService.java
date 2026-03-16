@@ -40,6 +40,12 @@ public class SecurityService implements SecurityPort
 	}
 
 	@Override
+	public Mono<Void> clearTokenCookie(ServerHttpResponse response)
+	{
+		return jwtOperations.clearTokenCookie(response);
+	}
+
+	@Override
 	public boolean isValidToken(String token)
 	{
 		return jwtOperations.isValidToken(token);

@@ -18,4 +18,6 @@ public interface JwtPort
 	Set<SystemRole> extractRoles(String token);
 
 	Mono<Void> setTokenInCookie(String token, ServerHttpResponse response);
+
+	Mono<Void> clearTokenCookie(ServerHttpResponse response);
 }

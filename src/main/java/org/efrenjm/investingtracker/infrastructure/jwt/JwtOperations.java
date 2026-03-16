@@ -2,7 +2,6 @@ package org.efrenjm.investingtracker.infrastructure.jwt;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
-import lombok.RequiredArgsConstructor;
 import org.efrenjm.investingtracker.domain.dto.UserIdentity;
 import org.efrenjm.investingtracker.domain.model.utils.SystemRole;
 import org.efrenjm.investingtracker.domain.ports.outbound.security.JwtPort;
@@ -20,6 +19,9 @@ import java.util.stream.Collectors;
 @Service
 public class JwtOperations implements JwtPort
 {
+	private static final String JWT_COOKIE_NAME = "jwt";
+	private static final String JWT_COOKIE_PATH = "/";
+
 	private final SecretKey key;
 	private final long EXPIRATION_TIME;
 
@@ -87,11 +89,23 @@ public class JwtOperations implements JwtPort
 	}
 
 	public Mono<Void> setTokenInCookie(String token, ServerHttpResponse response) {
-		ResponseCookie cookie = ResponseCookie.from("jwt", token)
+		ResponseCookie cookie = ResponseCookie.from(JWT_COOKIE_NAME, token)
 				.httpOnly(true)
 				//				.secure(true)    // TODO: Implement HTTPS
-				.path("/")
+				.path(JWT_COOKIE_PATH)
 				.maxAge(8 * 60 * (long) 60)
+				.build();
+		response.addCookie(cookie);
+		return response.setComplete();
+	}
+
+	@Override
+	public Mono<Void> clearTokenCookie(ServerHttpResponse response)
+	{
+		ResponseCookie cookie = ResponseCookie.from(JWT_COOKIE_NAME, "")
+				.httpOnly(true)
+				.path(JWT_COOKIE_PATH)
+				.maxAge(0)
 				.build();
 		response.addCookie(cookie);
 		return response.setComplete();
