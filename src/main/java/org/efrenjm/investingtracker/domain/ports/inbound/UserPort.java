@@ -17,11 +17,11 @@ public interface UserPort
 
 	Mono<User> addFriend(User user, String friendId);
 
-	Mono<User> removeFriend(User user, String friendToRemoveId);
+	Mono<Void> removeFriend(User user, String friendToRemoveId);
 
 	Flux<WalletSummary> getWallets(User user);
 
-	Mono<User> joinWallet(User user, String walletId);
+	Mono<Void> joinWallet(User user, String walletId);
 
-	Mono<User> quitWallet(User user, String walletId);
+	Mono<Void> quitWallet(User user, String walletId);
 }

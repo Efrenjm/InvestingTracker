@@ -1,5 +1,7 @@
 package org.efrenjm.investingtracker.domain.dto;
 
+import org.efrenjm.investingtracker.domain.model.user.User;
+
 public record PublicProfile (
 	String id,
 	String username,
@@ -10,4 +12,18 @@ public record PublicProfile (
 	String lastName,
 	String profilePicture
 )
-{}
+{
+	public static PublicProfile from(User user)
+	{
+		return new PublicProfile(
+				user.getId(),
+				user.getUsername(),
+				user.getEmail(),
+				user.getPhoneNumber(),
+				user.getFirstName(),
+				user.getMiddleName(),
+				user.getLastName(),
+				user.getProfilePicture()
+		);
+	}
+}

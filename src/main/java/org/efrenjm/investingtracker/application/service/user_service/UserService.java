@@ -13,7 +13,6 @@ import org.efrenjm.investingtracker.domain.dto.PublicProfile;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.util.function.Tuple2;
 
 @Service
 @RequiredArgsConstructor
@@ -62,11 +61,11 @@ public class UserService implements UserPort
 					return Mono.zip(
 							userRepository.save(user),
 							userRepository.save(friend)
-					).map(Tuple2::getT1);
+					).map(tuple -> tuple.getT1());
 				});
 	}
 
-	public Mono<User> removeFriend(User user, String friendToRemoveId)
+	public Mono<Void> removeFriend(User user, String friendToRemoveId)
 	{
 		return userRepository.findById(friendToRemoveId)
 				.switchIfEmpty(Mono.error(new UserNotFoundException(friendToRemoveId)))
@@ -75,7 +74,7 @@ public class UserService implements UserPort
 					return Mono.zip(
 							userRepository.save(user),
 							userRepository.save(friend)
-					).map(Tuple2::getT1);
+					).then();
 				});
 	}
 
@@ -83,7 +82,7 @@ public class UserService implements UserPort
 		return userRepository.fetchWallets(user.getId());
 	}
 
-	public Mono<User> joinWallet(User user, String walletId) {
+	public Mono<Void> joinWallet(User user, String walletId) {
 		return walletRepository.findById(walletId)
 				.switchIfEmpty(Mono.error(new WalletNotFoundException(walletId)))
 				.flatMap(wallet -> {
@@ -91,11 +90,11 @@ public class UserService implements UserPort
 					return Mono.zip(
 							walletRepository.save(wallet),
 							userRepository.save(user)
-					).map(Tuple2::getT2);
+					).then();
 				});
 	}
 
-	public Mono<User> quitWallet(User user, String walletToQuitId) {
+	public Mono<Void> quitWallet(User user, String walletToQuitId) {
 		return walletRepository.findById(walletToQuitId)
 				.switchIfEmpty(Mono.error(new WalletNotFoundException(walletToQuitId)))
 				.flatMap(wallet -> {
@@ -103,7 +102,7 @@ public class UserService implements UserPort
 					return Mono.zip(
 							walletRepository.save(wallet),
 							userRepository.save(user)
-					).map(Tuple2::getT2);
+					).then();
 				});
 	}
 }
