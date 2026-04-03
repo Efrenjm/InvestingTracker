@@ -26,9 +26,6 @@ import org.springframework.web.server.ServerWebExchange;
 
 import reactor.core.publisher.Mono;
 
-import java.util.HashSet;
-import java.util.List;
-
 @Service
 @RequiredArgsConstructor
 public class AuthenticationService implements AuthPort
@@ -44,6 +41,7 @@ public class AuthenticationService implements AuthPort
 	private final ValidationPort validationService;
 	private final UserVerificationService userVerificationService;
 	private final EmailPort emailService;
+	private final MessagePort messageService;
 	private final SecurityPort securityService;
 	private final SessionPort sessionService;
 	private final TransactionalOperator transactionalOperator;
@@ -235,15 +233,25 @@ public class AuthenticationService implements AuthPort
 			case EMAIL_VERIFICATION -> emailService.sendVerificationEmail(req.getCredential(), req.getCode())
 					.then()
 					.subscribe();
-			case PHONE_VERIFICATION -> throw new UnsupportedOperationException("SMS sender not implemented yet");
+			case PHONE_VERIFICATION -> messageService.sendVerificationMessage(req.getCredential(), req.getCode())
+					.then()
+					.subscribe();
 			case PASSWORD_RESET -> {
 				if (user.getEmail() != null)
 				{
-					throw new UnsupportedOperationException("Email template not implemented yet");
+					emailService.sendVerificationEmail(user.getEmail(), req.getCode())
+							.then()
+							.subscribe();
+				}
+				else if (user.getPhoneNumber() != null)
+				{
+					messageService.sendVerificationMessage(user.getPhoneNumber(), req.getCode())
+							.then()
+							.subscribe();
 				}
 				else
 				{
-					throw new UnsupportedOperationException("SMS sender not implemented yet");
+					throw new UnsupportedOperationException("No credential available for password reset");
 				}
 			}
 		}
