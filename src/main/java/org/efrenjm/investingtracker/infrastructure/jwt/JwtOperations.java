@@ -96,7 +96,7 @@ public class JwtOperations implements JwtPort
 				.maxAge(8 * 60 * (long) 60)
 				.build();
 		response.addCookie(cookie);
-		return response.setComplete();
+		return Mono.empty();
 	}
 
 	@Override
@@ -108,6 +108,6 @@ public class JwtOperations implements JwtPort
 				.maxAge(0)
 				.build();
 		response.addCookie(cookie);
-		return response.setComplete();
+		return Mono.empty();
 	}
 }

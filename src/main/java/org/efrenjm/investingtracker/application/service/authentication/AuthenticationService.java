@@ -47,7 +47,7 @@ public class AuthenticationService implements AuthPort
 	private final TransactionalOperator transactionalOperator;
 
 	@Override
-	public Mono<Void> login(String username, String password, ServerWebExchange exchange)
+	public Mono<User> login(String username, String password, ServerWebExchange exchange)
 	{
 		return userRepository.findByAnyCredential(username)
 				.switchIfEmpty(Mono.error(new InvalidCredentialsException()))
@@ -67,7 +67,8 @@ public class AuthenticationService implements AuthPort
 					}
 
 					return securityService.generateToken(user)
-							.flatMap(jwt -> securityService.setTokenInCookie(jwt, exchange.getResponse()));
+							.flatMap(jwt -> securityService.setTokenInCookie(jwt, exchange.getResponse()))
+							.thenReturn(user);
 				});
 	}
 

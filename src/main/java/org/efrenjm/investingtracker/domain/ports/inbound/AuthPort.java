@@ -8,7 +8,7 @@ import reactor.core.publisher.Mono;
 
 public interface AuthPort
 {
-	Mono<Void> login(String username, String password, ServerWebExchange exchange);
+	Mono<User> login(String username, String password, ServerWebExchange exchange);
 
 	Mono<Void> logout(UserIdentity user, ServerWebExchange exchange);
 

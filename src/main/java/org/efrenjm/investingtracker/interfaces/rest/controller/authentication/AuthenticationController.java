@@ -15,10 +15,7 @@ import org.efrenjm.investingtracker.domain.dto.UserIdentity;
 import org.efrenjm.investingtracker.domain.model.user.User;
 import org.efrenjm.investingtracker.domain.ports.inbound.AuthPort;
 import org.efrenjm.investingtracker.interfaces.annotations.AuthUser;
-import org.efrenjm.investingtracker.interfaces.rest.controller.authentication.dto.RegisterResponseDTO;
-import org.efrenjm.investingtracker.interfaces.rest.controller.authentication.dto.UserPasswordDTO;
-import org.efrenjm.investingtracker.interfaces.rest.controller.authentication.dto.VerifyCodeRequestDTO;
-import org.efrenjm.investingtracker.interfaces.rest.controller.authentication.dto.VerifyCodeResponseDTO;
+import org.efrenjm.investingtracker.interfaces.rest.controller.authentication.dto.*;
 import org.efrenjm.investingtracker.interfaces.rest.controller.authentication.exception.NoUserProvidedException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -63,11 +60,11 @@ public class AuthenticationController
 			)
 	)
 	@PostMapping("/login")
-	public Mono<ResponseEntity<Void>> login(@Valid @RequestBody UserPasswordDTO req,
+	public Mono<ResponseEntity<AuthResponseDTO>> login(@Valid @RequestBody UserPasswordDTO req,
 	                                       @Parameter(hidden = true) ServerWebExchange exchange)
 	{
 		return authenticationService.login(req.getUsername(), req.getPassword(), exchange)
-				.thenReturn(ResponseEntity.ok().build());
+				.map(user -> ResponseEntity.ok(AuthResponseDTO.from(user)));
 	}
 
 	@Operation(
