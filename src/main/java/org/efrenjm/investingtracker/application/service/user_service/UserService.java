@@ -2,6 +2,7 @@ package org.efrenjm.investingtracker.application.service.user_service;
 
 import lombok.RequiredArgsConstructor;
 import org.efrenjm.investingtracker.domain.dto.ProfileUpdateCommand;
+import org.efrenjm.investingtracker.domain.dto.UserIdentity;
 import org.efrenjm.investingtracker.domain.dto.WalletSummary;
 import org.efrenjm.investingtracker.application.service.user_service.exceptions.UserNotFoundException;
 import org.efrenjm.investingtracker.application.service.user_service.exceptions.WalletNotFoundException;
@@ -21,88 +22,110 @@ public class UserService implements UserPort
 	private final UserRepositoryPort userRepository;
 	private final WalletRepositoryPort walletRepository;
 
-	public Mono<User> updateProfile(User user, ProfileUpdateCommand command) {
-		// Apply command with fallback to current values for null fields
-		ProfileUpdateCommand effectiveCommand = command.withDefaults(
-				user.getUsername(),
-				user.getFirstName(),
-				user.getMiddleName(),
-				user.getLastName(),
-				user.getProfilePicture(),
-				user.getPreferences()
-		);
+	@Override
+	public Mono<User> updateProfile(UserIdentity user, ProfileUpdateCommand command) {
+		return userRepository.findById(user.id())
+				.switchIfEmpty(Mono.error(new UserNotFoundException(user.id())))
+				.flatMap(u -> {
+					ProfileUpdateCommand effectiveCommand = command.withDefaults(
+							u.getUsername(),
+							u.getFirstName(),
+							u.getMiddleName(),
+							u.getLastName(),
+							u.getProfilePicture(),
+							u.getPreferences()
+					);
 
-		user.setUsername(effectiveCommand.username());
-		user.setFirstName(effectiveCommand.firstName());
-		user.setMiddleName(effectiveCommand.middleName());
-		user.setLastName(effectiveCommand.lastName());
-		user.setProfilePicture(effectiveCommand.profilePicture());
-		user.setPreferences(effectiveCommand.userPreferences());
+					u.setUsername(effectiveCommand.username());
+					u.setFirstName(effectiveCommand.firstName());
+					u.setMiddleName(effectiveCommand.middleName());
+					u.setLastName(effectiveCommand.lastName());
+					u.setProfilePicture(effectiveCommand.profilePicture());
+					u.setPreferences(effectiveCommand.userPreferences());
 
-		return userRepository.save(user);
+					return userRepository.save(u);
+				});
 	}
 
-	// TODO: Implement wallet cleanup (unlink from shared wallets, delete personal wallets and their accounts)
-	public Mono<Void> deleteUser(User user) {
-		return userRepository.delete(user.getId());
+	@Override
+	public Mono<Void> deleteUser(UserIdentity user) {
+		return userRepository.delete(user.id());
 	}
 
-	public Flux<PublicProfile> getFriends(User user)
+	@Override
+	public Flux<PublicProfile> getFriends(UserIdentity user)
 	{
-		return userRepository.fetchFriends(user.getId());
+		return userRepository.fetchFriends(user.id());
 	}
 
-	public Mono<User> addFriend(User user, String friendId)
+	@Override
+	public Mono<User> addFriend(UserIdentity user, String friendId)
 	{
-		return userRepository.findById(friendId)
-				.switchIfEmpty(Mono.error(new UserNotFoundException(friendId)))
-				.flatMap(friend -> {
-					user.inviteFriend(friend);
-					return Mono.zip(
-							userRepository.save(user),
-							userRepository.save(friend)
-					).map(tuple -> tuple.getT1());
-				});
+		return Mono.zip(
+				userRepository.findById(user.id()).switchIfEmpty(Mono.error(new UserNotFoundException(user.id()))),
+				userRepository.findById(friendId).switchIfEmpty(Mono.error(new UserNotFoundException(friendId)))
+		).flatMap(tuple -> {
+			User u = tuple.getT1();
+			User friend = tuple.getT2();
+			u.inviteFriend(friend);
+			return Mono.zip(
+					userRepository.save(u),
+					userRepository.save(friend)
+			).map(t -> t.getT1());
+		});
 	}
 
-	public Mono<Void> removeFriend(User user, String friendToRemoveId)
+	@Override
+	public Mono<Void> removeFriend(UserIdentity user, String friendToRemoveId)
 	{
-		return userRepository.findById(friendToRemoveId)
-				.switchIfEmpty(Mono.error(new UserNotFoundException(friendToRemoveId)))
-				.flatMap(friend -> {
-					user.removeFriend(friend);
-					return Mono.zip(
-							userRepository.save(user),
-							userRepository.save(friend)
-					).then();
-				});
+		return Mono.zip(
+				userRepository.findById(user.id()).switchIfEmpty(Mono.error(new UserNotFoundException(user.id()))),
+				userRepository.findById(friendToRemoveId).switchIfEmpty(Mono.error(new UserNotFoundException(friendToRemoveId)))
+		).flatMap(tuple -> {
+			User u = tuple.getT1();
+			User friend = tuple.getT2();
+			u.removeFriend(friend);
+			return Mono.zip(
+					userRepository.save(u),
+					userRepository.save(friend)
+			).then();
+		});
 	}
 
-	public Flux<WalletSummary> getWallets(User user) {
-		return userRepository.fetchWallets(user.getId());
+	@Override
+	public Flux<WalletSummary> getWallets(UserIdentity user) {
+		return userRepository.fetchWallets(user.id());
 	}
 
-	public Mono<Void> joinWallet(User user, String walletId) {
-		return walletRepository.findById(walletId)
-				.switchIfEmpty(Mono.error(new WalletNotFoundException(walletId)))
-				.flatMap(wallet -> {
-					user.linkWallet(wallet, "Member");
-					return Mono.zip(
-							walletRepository.save(wallet),
-							userRepository.save(user)
-					).then();
-				});
+	@Override
+	public Mono<Void> joinWallet(UserIdentity userIdentity, String walletId) {
+		return Mono.zip(
+				userRepository.findById(userIdentity.id()).switchIfEmpty(Mono.error(new UserNotFoundException(userIdentity.id()))),
+				walletRepository.findById(walletId).switchIfEmpty(Mono.error(new WalletNotFoundException(walletId)))
+		).flatMap(tuple -> {
+			User user = tuple.getT1();
+			org.efrenjm.investingtracker.domain.model.wallet.Wallet wallet = tuple.getT2();
+			user.linkWallet(wallet, "Member");
+			return Mono.zip(
+					walletRepository.save(wallet),
+					userRepository.save(user)
+			).then();
+		});
 	}
 
-	public Mono<Void> quitWallet(User user, String walletToQuitId) {
-		return walletRepository.findById(walletToQuitId)
-				.switchIfEmpty(Mono.error(new WalletNotFoundException(walletToQuitId)))
-				.flatMap(wallet -> {
-					user.unlinkWallet(wallet);
-					return Mono.zip(
-							walletRepository.save(wallet),
-							userRepository.save(user)
+	@Override
+	public Mono<Void> quitWallet(UserIdentity userIdentity, String walletToQuitId) {
+		return Mono.zip(
+				userRepository.findById(userIdentity.id()).switchIfEmpty(Mono.error(new UserNotFoundException(userIdentity.id()))),
+				walletRepository.findById(walletToQuitId).switchIfEmpty(Mono.error(new WalletNotFoundException(walletToQuitId)))
+		).flatMap(tuple -> {
+			User user = tuple.getT1();
+			org.efrenjm.investingtracker.domain.model.wallet.Wallet wallet = tuple.getT2();
+			user.unlinkWallet(wallet);
+			return Mono.zip(
+					walletRepository.save(wallet),
+					userRepository.save(user)
 					).then();
-				});
+		});
 	}
 }

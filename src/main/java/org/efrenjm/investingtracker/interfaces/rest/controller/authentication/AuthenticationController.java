@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.efrenjm.investingtracker.domain.dto.UserIdentity;
+import org.efrenjm.investingtracker.domain.model.user.CodeUsage;
 import org.efrenjm.investingtracker.domain.model.user.User;
 import org.efrenjm.investingtracker.domain.ports.inbound.AuthPort;
 import org.efrenjm.investingtracker.interfaces.annotations.AuthUser;
@@ -110,7 +111,7 @@ public class AuthenticationController
 	{
 		return authenticationService.register(req.getUsername(), req.getPassword())
 				.map(user -> ResponseEntity.created(URI.create("/verify-code"))
-						.body(new RegisterResponseDTO(user)));
+						.body(RegisterResponseDTO.from(user)));
 	}
 
 	@Operation(
@@ -188,35 +189,68 @@ public class AuthenticationController
 			strategy = authenticationService.verifyCode(user, req.getCode());
 		}
 
-		return strategy.map(savedUser -> ResponseEntity.ok().body(new VerifyCodeResponseDTO(savedUser)));
+		return strategy.map(savedUser -> ResponseEntity.ok().body(VerifyCodeResponseDTO.from(savedUser)));
 	}
 
-//	@PutMapping("/email")
-//	public Mono<ResponseEntity<String>> updateEmail(@RequestBody String newEmail, @AuthUser AuthenticatedUser user)
-//	{
-//		return authenticationService.updateCredential(user.getDomainUser(), CodeUsage.EMAIL_VERIFICATION, newEmail)
-//				.map(res -> ResponseEntity.ok("Email updated successfully")); /* TODO: Change Response */
-//	}
-//
-//	@PutMapping("/phone")
-//	public Mono<ResponseEntity<String>> updatePhone(@RequestBody String newPhone, @AuthUser AuthenticatedUser user)
-//	{
-//		return authenticationService.updateCredential(user.getDomainUser(), CodeUsage.PHONE_VERIFICATION, newPhone)
-//				.map(res -> ResponseEntity.ok("Phone updated successfully")); /* TODO: Change Response */
-//	}
-//
-//	@PutMapping("/password")
-//	public Mono<ResponseEntity<String>> updatePassword(@Valid @RequestBody UpdatePasswordRequestDTO req,
-//	                                                   @AuthUser AuthenticatedUser user)
-//	{
-//		return authenticationService.updatePassword(user.getDomainUser(), req.getNewPassword(), req.getOldPassword())
-//				.map(res -> ResponseEntity.ok("Password updated successfully")); /* TODO: Change Response */
-//	}
-//
-//	@PostMapping("/forgot-password")
-//	public Mono<ResponseEntity<String>> forgotPassword(@Valid @RequestBody ForgotPasswordRequestDTO req)
-//	{
-//		return authenticationService.forgotPassword(req.getUsername(), req.getNewPassword())
-//				.map(res -> ResponseEntity.ok("Password updated successfully")); /* TODO: Change Response */
-//	}
+	@Operation(
+			summary = "Update email address",
+			description = "Initiates a change of the primary email address. Requires code verification."
+	)
+	@ApiResponses({
+			@ApiResponse(responseCode = "200", description = "Email update initiated; verification code sent"),
+			@ApiResponse(responseCode = "401", description = "Authentication required")
+	})
+	@PutMapping("/email")
+	public Mono<ResponseEntity<Void>> updateEmail(@RequestBody String newEmail, @Parameter(hidden = true) @AuthUser User user)
+	{
+		return authenticationService.updateCredential(user, CodeUsage.EMAIL_VERIFICATION, newEmail)
+				.thenReturn(ResponseEntity.ok().build());
+	}
+
+	@Operation(
+			summary = "Update phone number",
+			description = "Initiates a change of the primary phone number. Requires code verification."
+	)
+	@ApiResponses({
+			@ApiResponse(responseCode = "200", description = "Phone number update initiated; verification code sent"),
+			@ApiResponse(responseCode = "401", description = "Authentication required")
+	})
+	@PutMapping("/phone")
+	public Mono<ResponseEntity<Void>> updatePhone(@RequestBody String newPhone, @Parameter(hidden = true) @AuthUser User user)
+	{
+		return authenticationService.updateCredential(user, CodeUsage.PHONE_VERIFICATION, newPhone)
+				.thenReturn(ResponseEntity.ok().build());
+	}
+
+	@Operation(
+			summary = "Update password",
+			description = "Changes the user password. Requires the current password for verification."
+	)
+	@ApiResponses({
+			@ApiResponse(responseCode = "200", description = "Password updated successfully"),
+			@ApiResponse(responseCode = "400", description = "Validation error or incorrect old password"),
+			@ApiResponse(responseCode = "401", description = "Authentication required")
+	})
+	@PutMapping("/password")
+	public Mono<ResponseEntity<Void>> updatePassword(@Valid @RequestBody UpdatePasswordRequestDTO req,
+	                                                   @Parameter(hidden = true) @AuthUser User user)
+	{
+		return authenticationService.updatePassword(user, req.getNewPassword(), req.getOldPassword())
+				.thenReturn(ResponseEntity.ok().build());
+	}
+
+	@Operation(
+			summary = "Forgot password",
+			description = "Initiates the password reset flow for a user who forgot their credentials."
+	)
+	@ApiResponses({
+			@ApiResponse(responseCode = "200", description = "Password reset initiated; verification code sent"),
+			@ApiResponse(responseCode = "404", description = "User not found")
+	})
+	@PostMapping("/forgot-password")
+	public Mono<ResponseEntity<Void>> forgotPassword(@Valid @RequestBody ForgotPasswordRequestDTO req)
+	{
+		return authenticationService.forgotPassword(req.getUsername(), req.getNewPassword())
+				.thenReturn(ResponseEntity.ok().build());
+	}
 }

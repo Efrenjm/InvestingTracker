@@ -3,11 +3,13 @@ package org.efrenjm.investingtracker.interfaces.rest.controller.user_management;
 import lombok.AllArgsConstructor;
 import org.efrenjm.investingtracker.domain.dto.Profile;
 import org.efrenjm.investingtracker.domain.dto.PublicProfile;
+import org.efrenjm.investingtracker.domain.dto.UserIdentity;
 import org.efrenjm.investingtracker.domain.dto.WalletSummary;
-import org.efrenjm.investingtracker.domain.model.user.User;
 import org.efrenjm.investingtracker.domain.ports.inbound.UserPort;
 import org.efrenjm.investingtracker.interfaces.annotations.AuthUser;
+import org.efrenjm.investingtracker.interfaces.rest.controller.authentication.dto.AuthResponseDTO;
 import org.efrenjm.investingtracker.interfaces.rest.controller.user_management.dto.ProfileUpdateRequestDTO;
+import org.efrenjm.investingtracker.interfaces.rest.controller.user_management.dto.UserWebDTO;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
@@ -21,58 +23,58 @@ public class UserManagementController {
 	private final UserPort userPort;
 
 	@GetMapping
-	public Mono<ResponseEntity<Profile>> fetchProfile(@AuthUser Profile profile) {
-		return Mono.just(ResponseEntity.ok(profile));
+	public Mono<ResponseEntity<AuthResponseDTO>> fetchProfile(@AuthUser Profile profile) {
+		return Mono.just(ResponseEntity.ok(new AuthResponseDTO(UserWebDTO.from(profile))));
 	}
 
 	@PutMapping
-	public Mono<ResponseEntity<Profile>> updateProfile(@RequestBody ProfileUpdateRequestDTO updateRequest,
-	                                                   @AuthUser User user) {
+	public Mono<ResponseEntity<UserWebDTO>> updateProfile(@RequestBody ProfileUpdateRequestDTO updateRequest,
+	                                                   @AuthUser UserIdentity user) {
 		return userPort.updateProfile(user, updateRequest.toCommand())
-				.map(savedUser -> ResponseEntity.ok(Profile.from(savedUser)));
+				.map(savedUser -> ResponseEntity.ok(UserWebDTO.from(Profile.from(savedUser))));
 	}
 
 	@DeleteMapping
-	public Mono<ResponseEntity<Void>> deleteProfile(@AuthUser User user) {
+	public Mono<ResponseEntity<Void>> deleteProfile(@AuthUser UserIdentity user) {
 		return userPort.deleteUser(user)
-				.thenReturn(ResponseEntity.noContent().<Void>build());
+				.thenReturn(ResponseEntity.noContent().build());
 	}
 
 	@GetMapping("/friends")
-	public Mono<ResponseEntity<List<PublicProfile>>> getFriends(@AuthUser User user) {
+	public Mono<ResponseEntity<List<PublicProfile>>> getFriends(@AuthUser UserIdentity user) {
 		return userPort.getFriends(user)
 				.collectList()
 				.map(ResponseEntity::ok);
 	}
 
 	@PostMapping("/friends")
-	public Mono<ResponseEntity<PublicProfile>> addFriend(@RequestBody String friendId, @AuthUser User user) {
+	public Mono<ResponseEntity<PublicProfile>> addFriend(@RequestBody String friendId, @AuthUser UserIdentity user) {
 		return userPort.addFriend(user, friendId)
 				.map(friend -> ResponseEntity.ok(PublicProfile.from(friend)));
 	}
 
 	@DeleteMapping("/friends")
-	public Mono<ResponseEntity<Void>> deleteFriend(@RequestBody String friendId, @AuthUser User user) {
+	public Mono<ResponseEntity<Void>> deleteFriend(@RequestBody String friendId, @AuthUser UserIdentity user) {
 		return userPort.removeFriend(user, friendId)
-				.thenReturn(ResponseEntity.noContent().<Void>build());
+				.thenReturn(ResponseEntity.noContent().build());
 	}
 
 	@GetMapping("/wallet")
-	public Mono<ResponseEntity<List<WalletSummary>>> getWallets(@AuthUser User user) {
+	public Mono<ResponseEntity<List<WalletSummary>>> getWallets(@AuthUser UserIdentity user) {
 		return userPort.getWallets(user)
 				.collectList()
 				.map(ResponseEntity::ok);
 	}
 
 	@PostMapping("/wallet")
-	public Mono<ResponseEntity<Void>> joinWallet(@RequestBody String walletId, @AuthUser User user) {
+	public Mono<ResponseEntity<Void>> joinWallet(@RequestBody String walletId, @AuthUser UserIdentity user) {
 		return userPort.joinWallet(user, walletId)
-				.thenReturn(ResponseEntity.noContent().<Void>build());
+				.thenReturn(ResponseEntity.noContent().build());
 	}
 
 	@DeleteMapping("/wallet")
-	public Mono<ResponseEntity<Void>> quitWallet(@RequestBody String walletId, @AuthUser User user) {
+	public Mono<ResponseEntity<Void>> quitWallet(@RequestBody String walletId, @AuthUser UserIdentity user) {
 		return userPort.quitWallet(user, walletId)
-				.thenReturn(ResponseEntity.noContent().<Void>build());
+				.thenReturn(ResponseEntity.noContent().build());
 	}
 }

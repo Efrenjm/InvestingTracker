@@ -2,6 +2,7 @@ package org.efrenjm.investingtracker.domain.ports.inbound;
 
 import org.efrenjm.investingtracker.domain.dto.ProfileUpdateCommand;
 import org.efrenjm.investingtracker.domain.dto.PublicProfile;
+import org.efrenjm.investingtracker.domain.dto.UserIdentity;
 import org.efrenjm.investingtracker.domain.dto.WalletSummary;
 import org.efrenjm.investingtracker.domain.model.user.User;
 import reactor.core.publisher.Flux;
@@ -9,19 +10,19 @@ import reactor.core.publisher.Mono;
 
 public interface UserPort
 {
-	Mono<User> updateProfile(User user, ProfileUpdateCommand command);
+	Mono<User> updateProfile(UserIdentity user, ProfileUpdateCommand command);
 
-	Mono<Void> deleteUser(User user);
+	Mono<Void> deleteUser(UserIdentity user);
 
-	Flux<PublicProfile> getFriends(User user);
+	Flux<PublicProfile> getFriends(UserIdentity user);
 
-	Mono<User> addFriend(User user, String friendId);
+	Mono<User> addFriend(UserIdentity user, String friendId);
 
-	Mono<Void> removeFriend(User user, String friendToRemoveId);
+	Mono<Void> removeFriend(UserIdentity user, String friendToRemoveId);
 
-	Flux<WalletSummary> getWallets(User user);
+	Flux<WalletSummary> getWallets(UserIdentity user);
 
-	Mono<Void> joinWallet(User user, String walletId);
+	Mono<Void> joinWallet(UserIdentity user, String walletId);
 
-	Mono<Void> quitWallet(User user, String walletId);
+	Mono<Void> quitWallet(UserIdentity user, String walletId);
 }
