@@ -10,6 +10,7 @@ import org.efrenjm.investingtracker.domain.model.user.VerificationRequest;
 import org.efrenjm.investingtracker.domain.model.user.exceptions.CodeExpiredException;
 import org.efrenjm.investingtracker.domain.model.user.exceptions.InvalidPasswordException;
 import org.efrenjm.investingtracker.domain.model.user.exceptions.NoVerificationInProcessException;
+import org.efrenjm.investingtracker.domain.model.wallet.Visibility;
 import org.efrenjm.investingtracker.domain.model.wallet.Wallet;
 import org.efrenjm.investingtracker.domain.ports.inbound.*;
 import org.efrenjm.investingtracker.domain.ports.outbound.repository.AccountRepositoryPort;
@@ -268,25 +269,26 @@ public class AuthenticationService implements AuthPort
 					.flatMap(savedUser -> Mono.error(new AccountAlreadyVerifiedException()));
 		}
 
-		Wallet newWallet = walletDomainService.createWallet(user.getId(), "Personal", "Personal wallet");
+		Wallet newWallet = walletDomainService.createWallet(user.getId(), "Personal", "Personal wallet", Visibility.PRIVATE);
 		DebitAccount newAccount = accountDomainService.createDebitAccount("Personal", "Personal account");
 		newWallet.linkAccount(newAccount);
 
 		return accountRepository.save(newAccount)
 				.flatMap(savedAccount -> walletRepository.save(newWallet)
 						.flatMap(savedWallet -> {
-							user.setWallets(new HashSet<>(List.of(savedWallet.getId())));
+							user.linkWallet(savedWallet, "Owner");
 							user.setActive(true);
 
 							return completeCredentialsUpdate(user);
 						})
 				)
-				.as(transactionalOperator::transactional);
+				.as(transactionalOperator::transactional)
+				.thenReturn(user);
 	}
 
 	private Mono<User> completeCredentialsUpdate(User user)
 	{
 		userVerificationService.completeRequest(user);
-		return userRepository.save(user);
+		return userRepository.save(user).thenReturn(user);
 	}
 }

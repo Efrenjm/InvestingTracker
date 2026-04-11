@@ -1,6 +1,7 @@
 package org.efrenjm.investingtracker.domain.service;
 
 import lombok.RequiredArgsConstructor;
+import org.efrenjm.investingtracker.domain.model.wallet.Visibility;
 import org.efrenjm.investingtracker.domain.model.wallet.Wallet;
 import org.efrenjm.investingtracker.domain.model.wallet.WalletConfig;
 import org.efrenjm.investingtracker.domain.ports.outbound.utils.IdGeneratorPort;
