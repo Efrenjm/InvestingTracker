@@ -18,13 +18,14 @@ public class WalletDomainService
 	private final RoleDomainService roleDomainService;
 	private final TransactionCategoryDomainService transactionCategoryDomainService;
 
-	public Wallet createWallet(String creatorUserId, String name, String description)
+	public Wallet createWallet(String creatorUserId, String name, String description, Visibility visibility)
 	{
         Date now = new Date();
 		Wallet defaultWallet = Wallet.builder()
 				.id(idGenerator.generateId())
 				.name(name)
 				.description(description)
+				.visibility(visibility)
                 .roles(roleDomainService.createDefaultRoles())
                 .configuration(createDefaultConfig())
 				.createdBy(creatorUserId)
@@ -34,6 +35,11 @@ public class WalletDomainService
 				.build();
 		defaultWallet.addMemberToRole("Owner", creatorUserId);
 		return defaultWallet;
+	}
+
+	public Wallet createWallet(String creatorUserId, String name, String description)
+	{
+		return createWallet(creatorUserId, name, description, Visibility.PRIVATE);
 	}
 
 	private WalletConfig createDefaultConfig()

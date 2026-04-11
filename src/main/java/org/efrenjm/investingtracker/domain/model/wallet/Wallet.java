@@ -24,6 +24,9 @@ public class Wallet extends AuditableModel
     private String description;
 
     @Builder.Default
+    private Visibility visibility = Visibility.PRIVATE;
+
+    @Builder.Default
     private Map<String, Role> roles = new HashMap<>();
 
     @Builder.Default

@@ -23,6 +23,7 @@ public class WalletEntity extends AuditableMongoEntity
 {
 	@Field("name") private String name;
 	@Field("description") private String description;
+	@Field("visibility") private Visibility visibility;
 	@Field("roles") private Map<String, RoleEntity> roles;
 	@Field("accounts") private Set<ObjectId> accounts;
 	@Field("configuration") private WalletConfigEntity configuration;
@@ -35,6 +36,7 @@ public class WalletEntity extends AuditableMongoEntity
 		return populateAuditableEntityFields(WalletEntity.builder(), wallet)
 				.name(wallet.getName())
 				.description(wallet.getDescription())
+				.visibility(wallet.getVisibility())
 				.roles(CollectionTransformer.transformMapValues(wallet.getRoles().orElse(Map.of()), RoleEntity::fromDomain))
 				.accounts(MongoUtils.tryParseIds(wallet.getAccounts().orElse(Set.of())))
 				.configuration(WalletConfigEntity.fromDomain(wallet.getConfiguration().orElse(null)))
@@ -46,6 +48,7 @@ public class WalletEntity extends AuditableMongoEntity
 		return populateAuditableDomainFields(Wallet.builder())
 				.name(name)
 				.description(description)
+				.visibility(visibility)
 				.roles(CollectionTransformer.transformMapValues(roles, RoleEntity::toDomain))
 				.accounts(MongoUtils.collectIds(accounts))
 				.configuration(Optional.ofNullable(configuration)

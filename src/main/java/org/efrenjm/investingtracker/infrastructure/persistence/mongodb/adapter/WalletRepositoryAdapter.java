@@ -36,4 +36,15 @@ public class WalletRepositoryAdapter implements WalletRepositoryPort {
 		return accountMongoRepository.findWalletAccounts(new ObjectId(walletId))
 				.map(AccountSummaryProjection::toDomain);
 	}
+
+	@Override
+	public Mono<Void> delete(String walletId) {
+		return walletMongoRepository.deleteById(new ObjectId(walletId));
+	}
+
+	@Override
+	public Flux<Wallet> findByVisibility(org.efrenjm.investingtracker.domain.model.wallet.Visibility visibility) {
+		return walletMongoRepository.findByVisibility(visibility)
+				.map(WalletEntity::toDomain);
+	}
 }
