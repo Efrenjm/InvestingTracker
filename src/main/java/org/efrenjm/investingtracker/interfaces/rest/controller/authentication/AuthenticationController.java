@@ -102,14 +102,14 @@ public class AuthenticationController
 			description = "Registration data for a new user account.",
 			content = @Content(
 					mediaType = "application/json",
-					schema = @Schema(implementation = UserPasswordDTO.class),
-					examples = @ExampleObject(value = "{\"username\":\"john.doe@email.com\",\"password\":\"Str0ngP@ss!\"}")
+					schema = @Schema(implementation = RegisterRequestDTO.class),
+					examples = @ExampleObject(value = "{\"username\":\"john.doe@email.com\"}")
 			)
 	)
 	@PostMapping("/register")
-	public Mono<ResponseEntity<RegisterResponseDTO>> register(@Valid @RequestBody UserPasswordDTO req)
+	public Mono<ResponseEntity<RegisterResponseDTO>> register(@Valid @RequestBody RegisterRequestDTO req)
 	{
-		return authenticationService.register(req.getUsername(), req.getPassword())
+		return authenticationService.register(req.getUsername())
 				.map(user -> ResponseEntity.created(URI.create("/verify-code"))
 						.body(RegisterResponseDTO.from(user)));
 	}
@@ -147,12 +147,15 @@ public class AuthenticationController
 
 	@Operation(
 			summary = "Verify one-time code",
-			description = "Validates a one-time code and completes the pending verification flow. If the caller is authenticated, userId can be omitted from the request body."
+			description = "Validates a one-time code and completes the pending verification flow. Redirects to /password for password setup."
 	)
 	@ApiResponses({
 			@ApiResponse(
 					responseCode = "200",
-					description = "Code verified successfully",
+					description = "Code verified successfully; Location header points to /password",
+					headers = {
+							@Header(name = "Location", description = "URL for setting account password after verification")
+					},
 					content = @Content(mediaType = "application/json", schema = @Schema(implementation = VerifyCodeResponseDTO.class))
 			),
 			@ApiResponse(responseCode = "400", description = "Invalid or expired code, or bad request payload", content = @Content(mediaType = "text/plain")),
@@ -189,7 +192,8 @@ public class AuthenticationController
 			strategy = authenticationService.verifyCode(user, req.getCode());
 		}
 
-		return strategy.map(savedUser -> ResponseEntity.ok().body(VerifyCodeResponseDTO.from(savedUser)));
+		return strategy.map(savedUser -> ResponseEntity.created(URI.create("/password"))
+				.body(VerifyCodeResponseDTO.from(savedUser)));
 	}
 
 	@Operation(

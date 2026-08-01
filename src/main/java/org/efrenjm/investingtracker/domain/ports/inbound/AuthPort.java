@@ -12,7 +12,7 @@ public interface AuthPort
 
 	Mono<Void> logout(UserIdentity user, ServerWebExchange exchange);
 
-	Mono<User> register(String username, String password);
+	Mono<User> register(String username);
 
 	Mono<User> refreshVerificationCode(String userId);
 

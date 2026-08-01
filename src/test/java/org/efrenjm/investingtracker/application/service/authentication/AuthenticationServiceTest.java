@@ -10,8 +10,10 @@ import org.efrenjm.investingtracker.domain.model.user.User;
 import org.efrenjm.investingtracker.domain.model.user.VerificationRequest;
 import org.efrenjm.investingtracker.domain.model.user.exceptions.CodeExpiredException;
 import org.efrenjm.investingtracker.domain.model.user.exceptions.InvalidPasswordException;
+import org.efrenjm.investingtracker.domain.model.wallet.Role;
 import org.efrenjm.investingtracker.domain.model.wallet.Wallet;
 import org.efrenjm.investingtracker.domain.ports.inbound.EmailPort;
+import org.efrenjm.investingtracker.domain.ports.inbound.MessagePort;
 import org.efrenjm.investingtracker.domain.ports.inbound.SecurityPort;
 import org.efrenjm.investingtracker.domain.ports.inbound.ValidationPort;
 import org.efrenjm.investingtracker.domain.ports.outbound.repository.AccountRepositoryPort;
@@ -61,6 +63,8 @@ class AuthenticationServiceTest {
 	@Mock
 	private EmailPort emailService;
 	@Mock
+	private MessagePort messageService;
+	@Mock
 	private SecurityPort securityService;
 	@Mock
 	private SessionPort sessionService;
@@ -101,6 +105,7 @@ class AuthenticationServiceTest {
 		when(securityService.setTokenInCookie(eq(token), any())).thenReturn(Mono.empty());
 
 		StepVerifier.create(authService.login(username, password, exchange))
+				.expectNext(user)
 				.verifyComplete();
 
 		verify(securityService).generateToken(user);
@@ -182,10 +187,9 @@ class AuthenticationServiceTest {
 				.verificationRequest(verificationRequest)
 				.build();
 
-		when(validationService.isValidPassword(password)).thenReturn(true);
 		when(validationService.isValidEmail(email)).thenReturn(true);
 		when(userRepository.findEmailInUse(email)).thenReturn(Mono.empty());
-		when(userDomainService.createUser(email, password)).thenReturn(createdUser);
+		when(userDomainService.createUser(email)).thenReturn(createdUser);
 		when(emailService.sendVerificationEmail(anyString(), anyString())).thenReturn(Mono.empty());
 
 		when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
@@ -194,7 +198,7 @@ class AuthenticationServiceTest {
 			return Mono.just(savedUser);
 		});
 
-		StepVerifier.create(authService.register(email, password))
+		StepVerifier.create(authService.register(email))
 				.assertNext(user -> {
 					assert user.getPassword().equals(encodedPassword);
 					assert !user.isActive();
@@ -272,6 +276,11 @@ class AuthenticationServiceTest {
 		Wallet newWallet = Wallet.builder()
 				.id(walletId)
 				.name("Personal")
+				.roles(new java.util.HashMap<>(java.util.Map.of(
+						"Owner", Role.builder().members(new java.util.HashSet<>()).build(),
+						"Manager", Role.builder().members(new java.util.HashSet<>()).build(),
+						"Viewer", Role.builder().members(new java.util.HashSet<>()).build()
+				)))
 				.build();
 
 		DebitAccount newAccount = DebitAccount.builder()
@@ -280,16 +289,25 @@ class AuthenticationServiceTest {
 				.build();
 
 		doNothing().when(userVerificationService).validateRequest(request, code);
-		when(walletDomainService.createWallet(userId, "Personal", "Personal wallet")).thenReturn(newWallet);
+		doReturn(newWallet).when(walletDomainService).createWallet(anyString(), anyString(), anyString(), any());
 		when(accountDomainService.createDebitAccount("Personal", "Personal account")).thenReturn(newAccount);
 		when(userRepository.findById(userId)).thenReturn(Mono.just(user));
-		when(walletRepository.save(any(Wallet.class))).thenAnswer(inv -> Mono.just(inv.getArgument(0)));
-		when(accountRepository.save(any(DebitAccount.class))).thenAnswer(inv -> Mono.just(inv.getArgument(0)));
+		when(walletRepository.save(any(Wallet.class))).thenAnswer(inv -> {
+			Wallet w = inv.getArgument(0);
+			if (w.getId() == null) w.setId(walletId);
+			return Mono.just(w);
+		});
+		when(accountRepository.save(any(DebitAccount.class))).thenAnswer(inv -> {
+			DebitAccount a = inv.getArgument(0);
+			if (a.getId() == null) a.setId(accountId);
+			return Mono.just(a);
+		});
 		when(userRepository.save(any(User.class))).thenAnswer(inv -> Mono.just(inv.getArgument(0)));
 		doAnswer(inv -> {
 			User u = inv.getArgument(0);
+			u.setActive(true);
 			u.setEmail("user@example.com");
-			u.clearVerificationRequest();
+			u.setVerificationRequest(null);
 			return null;
 		}).when(userVerificationService).completeRequest(any(User.class));
 

@@ -15,6 +15,8 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
+import java.time.Duration;
+
 /**
  * Base class for all integration tests.
  * Automatically starts Docker containers for MongoDB, Redis, and Mailpit
@@ -30,11 +32,13 @@ public abstract class IntegrationTestBase {
 
     @Container
     static final MongoDBContainer mongoDBContainer =
-            new MongoDBContainer(DockerImageName.parse("mongo:7.0"));
+            new MongoDBContainer(DockerImageName.parse("mongo:7.0"))
+                    .withStartupTimeout(Duration.ofMinutes(2));
 
     @Container
     static final RedisContainer redisContainer =
-            new RedisContainer(DockerImageName.parse("redis:7.2-alpine"));
+            new RedisContainer(DockerImageName.parse("redis:7.2-alpine"))
+                    .withStartupTimeout(Duration.ofMinutes(2));
 
     /**
      * Mailpit: fake SMTP server with an HTTP API to read test emails.
@@ -44,9 +48,10 @@ public abstract class IntegrationTestBase {
     @Container
     @SuppressWarnings("resource")
     static final GenericContainer<?> mailpitContainer =
-            new GenericContainer<>(DockerImageName.parse("axllent/mailpit:latest"))
+            new GenericContainer<>(DockerImageName.parse("axllent/mailpit:v1.15.1"))
                     .withExposedPorts(1025, 8025)
-                    .waitingFor(Wait.forHttp("/api/v1/messages").forPort(8025));
+                    .withStartupTimeout(Duration.ofMinutes(2))
+                    .waitingFor(Wait.forListeningPort()); // Faster wait strategy than HTTP check
 
     @Autowired
     private ReactiveMongoTemplate mongoTemplate;

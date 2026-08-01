@@ -91,8 +91,8 @@ public class JwtOperations implements JwtPort
 	public Mono<Void> setTokenInCookie(String token, ServerHttpResponse response) {
 		ResponseCookie cookie = ResponseCookie.from(JWT_COOKIE_NAME, token)
 				.httpOnly(true)
-				//				.secure(true)    // TODO: Implement HTTPS
 				.path(JWT_COOKIE_PATH)
+				.sameSite("Lax")
 				.maxAge(8 * 60 * (long) 60)
 				.build();
 		response.addCookie(cookie);
@@ -105,6 +105,7 @@ public class JwtOperations implements JwtPort
 		ResponseCookie cookie = ResponseCookie.from(JWT_COOKIE_NAME, "")
 				.httpOnly(true)
 				.path(JWT_COOKIE_PATH)
+				.sameSite("Lax")
 				.maxAge(0)
 				.build();
 		response.addCookie(cookie);

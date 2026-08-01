@@ -39,6 +39,7 @@ spring:
           auth: true
           starttls:
             enable: true
+          localhost: ${MAIL_LOCALHOST:sandbox6f1a2edd320341c7acb394d2ed82bcc9.mailgun.org}
   twilio:
     account-sid: ${TWILIO_ACCOUNT_SID}
     auth-token: ${TWILIO_AUTH_TOKEN}

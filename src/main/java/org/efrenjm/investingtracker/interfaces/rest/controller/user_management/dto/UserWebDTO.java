@@ -19,16 +19,26 @@ public record UserWebDTO(
         Set<String> roles
 ) {
     public static UserWebDTO from(Profile profile) {
+        if (profile == null) {
+            return null;
+        }
+        String username = profile.username();
+        if (username == null || username.isBlank()) {
+            username = profile.email() != null ? profile.email() : profile.phoneNumber();
+        }
+        Set<String> roles = profile.roles() != null
+                ? profile.roles().stream().map(Enum::name).collect(Collectors.toSet())
+                : Set.of();
         return new UserWebDTO(
                 profile.id(),
-                profile.username(),
+                username,
                 profile.email(),
                 profile.phoneNumber(),
                 profile.firstName(),
                 profile.middleName(),
                 profile.lastName(),
                 profile.profilePicture(),
-                profile.roles().stream().map(Enum::name).collect(Collectors.toSet())
+                roles
         );
     }
 }

@@ -2,7 +2,6 @@ package org.efrenjm.investingtracker.domain.dto;
 
 import org.efrenjm.investingtracker.domain.model.user.User;
 import org.efrenjm.investingtracker.domain.model.utils.SystemRole;
-import org.springframework.security.core.GrantedAuthority;
 
 import java.util.Set;
 
@@ -20,16 +19,25 @@ public record Profile(
 {
 	public static Profile from(User user)
 	{
+		if (user == null)
+		{
+			return null;
+		}
+		String username = user.getUsername();
+		if (username == null || username.isBlank())
+		{
+			username = user.getEmail() != null ? user.getEmail() : user.getPhoneNumber();
+		}
 		return new Profile(
 				user.getId(),
-				user.getUsername(),
+				username,
 				user.getEmail(),
 				user.getPhoneNumber(),
 				user.getFirstName(),
 				user.getMiddleName(),
 				user.getLastName(),
 				user.getProfilePicture(),
-				user.getRoles()
+				user.getRoles() != null ? user.getRoles() : Set.of()
 		);
 	}
 }

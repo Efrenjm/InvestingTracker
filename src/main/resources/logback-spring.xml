@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         DEV / DEFAULT PROFILE — Human-readable console output
+         Format: TIMESTAMP | LEVEL | LOGGER | MESSAGE
+         ═══════════════════════════════════════════════════════════════ -->
+    <springProfile name="dev,default">
+        <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder>
+                <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} | %-5level | %logger{36} | %msg%n</pattern>
+            </encoder>
+        </appender>
+
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+        </root>
+
+        <!-- Application logs at DEBUG for development -->
+        <logger name="org.efrenjm.investingtracker" level="DEBUG"/>
+
+        <!-- Spring Framework & Spring Boot logs at INFO (startup, Security, WebFlux, etc.) -->
+        <logger name="org.springframework" level="INFO"/>
+        <logger name="org.springframework.data.mongodb" level="INFO"/>
+
+        <!-- Optional: uncomment below for detailed WebFlux HTTP request/response logging -->
+        <!-- <logger name="org.springframework.web" level="DEBUG"/> -->
+        <!-- <logger name="org.springframework.security" level="DEBUG"/> -->
+
+        <!-- Suppress driver/network noise only -->
+        <logger name="org.mongodb.driver" level="WARN"/>
+        <logger name="io.netty" level="WARN"/>
+        <logger name="io.lettuce" level="WARN"/>
+    </springProfile>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         PROD PROFILE — Structured JSON output
+         Compatible with Datadog, CloudWatch, ELK, Loki, etc.
+         ═══════════════════════════════════════════════════════════════ -->
+    <springProfile name="prod">
+        <appender name="JSON_CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+                <includeCallerData>false</includeCallerData>
+                <shortenedLoggerNameLength>36</shortenedLoggerNameLength>
+                <timestampPattern>yyyy-MM-dd'T'HH:mm:ss.SSSZ</timestampPattern>
+                <fieldNames>
+                    <timestamp>timestamp</timestamp>
+                    <version>[ignore]</version>
+                </fieldNames>
+            </encoder>
+        </appender>
+
+        <root level="INFO">
+            <appender-ref ref="JSON_CONSOLE"/>
+        </root>
+
+        <!-- Application logs at INFO for production -->
+        <logger name="org.efrenjm.investingtracker" level="INFO"/>
+        <logger name="org.springframework" level="INFO"/>
+
+        <!-- Suppress driver/network noise only -->
+        <logger name="org.mongodb.driver" level="WARN"/>
+        <logger name="io.netty" level="WARN"/>
+        <logger name="io.lettuce" level="WARN"/>
+    </springProfile>
+
+</configuration>

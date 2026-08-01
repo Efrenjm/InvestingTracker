@@ -49,6 +49,7 @@ dependencies {
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jdk8'
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
     implementation 'org.springdoc:springdoc-openapi-starter-webflux-ui:2.6.0'
+    implementation 'net.logstash.logback:logstash-logback-encoder:8.0'
     implementation 'io.jsonwebtoken:jjwt-impl:0.12.6'
     implementation 'io.jsonwebtoken:jjwt-jackson:0.12.6'
     compileOnly 'org.projectlombok:lombok'
@@ -93,4 +94,13 @@ tasks.register('integrationTest', Test) {
     classpath = sourceSets.integrationTest.runtimeClasspath
     shouldRunAfter test
     jvmArgs '-XX:+EnableDynamicAgentLoading'
+    
+    // Disable Ryuk to avoid hangs in some environments
+    environment "TESTCONTAINERS_RYUK_DISABLED", "true"
+
+    testLogging {
+        events "passed", "skipped", "failed", "standardOut", "standardError"
+        showStandardStreams = true
+        exceptionFormat = 'full'
+    }
 }

@@ -5,10 +5,7 @@ import org.efrenjm.investingtracker.domain.model.user.User;
 import org.efrenjm.investingtracker.domain.model.user.VerificationRequest;
 import org.efrenjm.investingtracker.domain.model.user.CodeUsage;
 import org.efrenjm.investingtracker.domain.ports.inbound.AuthPort;
-import org.efrenjm.investingtracker.interfaces.rest.controller.authentication.dto.UserPasswordDTO;
-import org.efrenjm.investingtracker.interfaces.rest.controller.authentication.dto.RegisterResponseDTO;
-import org.efrenjm.investingtracker.interfaces.rest.controller.authentication.dto.VerifyCodeRequestDTO;
-import org.efrenjm.investingtracker.interfaces.rest.controller.authentication.dto.VerifyCodeResponseDTO;
+import org.efrenjm.investingtracker.interfaces.rest.controller.authentication.dto.*;
 import org.efrenjm.investingtracker.interfaces.rest.controller.authentication.exception.NoUserProvidedException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -41,22 +38,29 @@ class AuthenticationControllerTest {
 	@Test
 	void login_ValidCredentials_ReturnsOk() {
 		UserPasswordDTO request = new UserPasswordDTO("user@example.com", "password123");
+		User user = User.builder()
+				.username("user@example.com")
+				.email("user@example.com")
+				.active(true)
+				.build();
 
 		when(authService.login(request.getUsername(), request.getPassword(), exchange))
-				.thenReturn(Mono.empty());
+				.thenReturn(Mono.just(user));
 
-		Mono<ResponseEntity<Void>> result = controller.login(request, exchange);
+		Mono<ResponseEntity<AuthResponseDTO>> result = controller.login(request, exchange);
 
 		StepVerifier.create(result)
 				.assertNext(response -> {
 					assertEquals(200, response.getStatusCode().value());
+					assertNotNull(response.getBody());
+					assertEquals("user@example.com", response.getBody().user().username());
 				})
 				.verifyComplete();
 	}
 
 	@Test
 	void register_ValidData_ReturnsCreated() {
-		UserPasswordDTO request = new UserPasswordDTO("user@example.com", "Password1@");
+		RegisterRequestDTO request = new RegisterRequestDTO("user@example.com");
 
 		String userId = new ObjectId().toString();
 
@@ -73,7 +77,7 @@ class AuthenticationControllerTest {
 				.verificationRequest(verificationRequest)
 				.build();
 
-		when(authService.register(request.getUsername(), request.getPassword()))
+		when(authService.register(request.getUsername()))
 				.thenReturn(Mono.just(user));
 
 		Mono<ResponseEntity<RegisterResponseDTO>> result = controller.register(request);
@@ -82,7 +86,7 @@ class AuthenticationControllerTest {
 				.assertNext(response -> {
 					assertEquals(201, response.getStatusCode().value());
 					assertEquals(URI.create("/verify-code"), response.getHeaders().getLocation());
-					assertEquals(userId, response.getBody().getUserId());
+					assertEquals(userId, response.getBody().userId());
 				})
 				.verifyComplete();
 	}
@@ -151,9 +155,10 @@ class AuthenticationControllerTest {
 
 		StepVerifier.create(result)
 				.assertNext(response -> {
-					assertEquals(200, response.getStatusCode().value());
+					assertEquals(201, response.getStatusCode().value());
+					assertEquals(URI.create("/password"), response.getHeaders().getLocation());
 					assertNotNull(response.getBody());
-					assertEquals(user.getId(), response.getBody().getUserId());
+					assertEquals(user.getId(), response.getBody().userId());
 				})
 				.verifyComplete();
 	}
@@ -178,9 +183,10 @@ class AuthenticationControllerTest {
 
 		StepVerifier.create(result)
 				.assertNext(response -> {
-					assertEquals(200, response.getStatusCode().value());
+					assertEquals(201, response.getStatusCode().value());
+					assertEquals(URI.create("/password"), response.getHeaders().getLocation());
 					assertNotNull(response.getBody());
-					assertEquals(userId, response.getBody().getUserId());
+					assertEquals(userId, response.getBody().userId());
 				})
 				.verifyComplete();
 	}

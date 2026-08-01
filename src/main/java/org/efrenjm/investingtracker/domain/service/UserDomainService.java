@@ -18,13 +18,12 @@ public class UserDomainService
 	private final ValidationPort validationService;
 	private final UserVerificationService userVerificationService;
 
-	public User createUser(String username, String password)
+	public User createUser(String username)
 	{
-		String encodedPassword = passwordEncoder.encode(password);
 		Date now = new Date();
 
 		User newUser = User.builder()
-				.password(encodedPassword)
+				.username(username)
 				.active(false)
 				.createdAt(now)
 				.updatedAt(now)
@@ -36,6 +35,17 @@ public class UserDomainService
 
 		newUser.setVerificationRequest(userVerificationService.createRequest(codeUsage, username));
 		return newUser;
+	}
+
+	public User resetUnverifiedPassword(User user, String newPassword)
+	{
+		if (!validationService.isValidPassword(newPassword))
+		{
+			throw new InvalidPasswordException();
+		}
+		user.setPassword(passwordEncoder.encode(newPassword));
+		user.setUpdatedAt(new Date());
+		return user;
 	}
 
 	public User updateCredential(User user, CodeUsage codeUsage, String credential)
@@ -60,7 +70,7 @@ public class UserDomainService
 				{
 					throw new InvalidPasswordException();
 				}
-				if (!user.getPassword().equals(encodedPassword))
+				if (user.getPassword() != null && user.getPassword().equals(encodedPassword))
 				{
 					throw new ReusedPasswordException();
 				}
@@ -74,19 +84,24 @@ public class UserDomainService
 
 	public User updatePassword(User user, String newPassword, String oldPassword)
 	{
-		if (!passwordEncoder.matches(oldPassword, user.getPassword()))
+		if (user.getPassword() != null && !user.getPassword().isBlank())
 		{
-			throw new InvalidOldPasswordException();
+			if (oldPassword == null || !passwordEncoder.matches(oldPassword, user.getPassword()))
+			{
+				throw new InvalidOldPasswordException();
+			}
+			if (passwordEncoder.matches(newPassword, user.getPassword()))
+			{
+				throw new ReusedPasswordException();
+			}
 		}
-		if (passwordEncoder.matches(newPassword, user.getPassword()))
-		{
-			throw new ReusedPasswordException();
-		}
+
 		if (!validationService.isValidPassword(newPassword))
 		{
 			throw new InvalidPasswordException();
 		}
 		user.setPassword(passwordEncoder.encode(newPassword));
+		user.setUpdatedAt(new Date());
 		return user;
 	}
 }
