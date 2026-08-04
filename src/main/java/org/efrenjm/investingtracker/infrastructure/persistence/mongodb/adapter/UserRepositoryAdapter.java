@@ -26,14 +26,19 @@ public class UserRepositoryAdapter implements UserRepositoryPort
 	@Override
 	public Mono<User> findById(String userId)
 	{
-		ObjectId id = MongoUtils.idToEntity(userId);
-		if (id == null)
+		if (userId == null || userId.isBlank())
 		{
 			return Mono.empty();
 		}
+		ObjectId id = MongoUtils.idToEntity(userId);
+		if (id == null)
+		{
+			return findByAnyCredential(userId);
+		}
 		return userMongoRepository
 				.findById(id)
-				.map(UserEntity::toDomain);
+				.map(UserEntity::toDomain)
+				.switchIfEmpty(Mono.defer(() -> findByAnyCredential(userId)));
 	}
 
 	@Override

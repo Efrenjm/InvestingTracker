@@ -30,6 +30,7 @@ public class WalletService implements WalletPort
 		Wallet newWallet = walletDomainService.createWallet(user.id(), name, description, visibility);
 		return walletRepository.save(newWallet)
 				.flatMap(savedWallet -> userRepository.findById(user.id())
+						.switchIfEmpty(Mono.error(new UserNotFoundException(user.id())))
 						.flatMap(u -> {
 							u.linkWallet(savedWallet, "Owner");
 							return userRepository.save(u)

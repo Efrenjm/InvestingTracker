@@ -2,7 +2,10 @@ package org.efrenjm.investingtracker.application.service.authentication;
 
 import org.bson.types.ObjectId;
 import org.efrenjm.investingtracker.application.service.authentication.exceptions.InvalidCredentialsException;
+import org.efrenjm.investingtracker.application.service.authentication.exceptions.InvalidUsernameException;
 import org.efrenjm.investingtracker.application.service.authentication.exceptions.RegistrationNotCompletedException;
+import org.efrenjm.investingtracker.application.service.authentication.exceptions.UserAlreadyExistsException;
+import org.efrenjm.investingtracker.application.service.authentication.exceptions.UserNotActiveException;
 import org.efrenjm.investingtracker.domain.dto.UserIdentity;
 import org.efrenjm.investingtracker.domain.model.account.DebitAccount;
 import org.efrenjm.investingtracker.domain.model.user.CodeUsage;
@@ -10,6 +13,7 @@ import org.efrenjm.investingtracker.domain.model.user.User;
 import org.efrenjm.investingtracker.domain.model.user.VerificationRequest;
 import org.efrenjm.investingtracker.domain.model.user.exceptions.CodeExpiredException;
 import org.efrenjm.investingtracker.domain.model.user.exceptions.InvalidPasswordException;
+import org.efrenjm.investingtracker.domain.model.user.exceptions.NoVerificationInProcessException;
 import org.efrenjm.investingtracker.domain.model.wallet.Role;
 import org.efrenjm.investingtracker.domain.model.wallet.Wallet;
 import org.efrenjm.investingtracker.domain.ports.inbound.EmailPort;
@@ -38,7 +42,7 @@ import reactor.test.StepVerifier;
 
 import java.util.Date;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
@@ -148,6 +152,15 @@ class AuthenticationServiceTest {
 	}
 
 	@Test
+	void login_UserNotFound_ThrowsException() {
+		when(userRepository.findByAnyCredential("unknown@example.com")).thenReturn(Mono.empty());
+
+		StepVerifier.create(authService.login("unknown@example.com", "password123", exchange))
+				.expectError(InvalidCredentialsException.class)
+				.verify();
+	}
+
+	@Test
 	void login_UserNotEnabled_NewUser_ThrowsRegistrationNotCompleted() {
 		String username = "user@example.com";
 		String password = "password123";
@@ -164,6 +177,26 @@ class AuthenticationServiceTest {
 
 		StepVerifier.create(authService.login(username, password, exchange))
 				.expectError(RegistrationNotCompletedException.class)
+				.verify();
+	}
+
+	@Test
+	void login_UserNotEnabled_ExistingUser_ThrowsUserNotActive() {
+		String username = "user@example.com";
+		String password = "password123";
+		String hashedPassword = "hashedPassword";
+
+		User user = User.builder()
+				.password(hashedPassword)
+				.email(username)
+				.active(false)
+				.build();
+
+		when(userRepository.findByAnyCredential(username)).thenReturn(Mono.just(user));
+		when(securityService.arePasswordsEqual(password, hashedPassword)).thenReturn(true);
+
+		StepVerifier.create(authService.login(username, password, exchange))
+				.expectError(UserNotActiveException.class)
 				.verify();
 	}
 
@@ -212,6 +245,112 @@ class AuthenticationServiceTest {
 	}
 
 	@Test
+	void register_InvalidCredential_ThrowsException() {
+		String username = "not-an-email-or-phone";
+		when(validationService.isValidEmail(username)).thenReturn(false);
+		when(validationService.isValidPhone(username)).thenReturn(false);
+
+		StepVerifier.create(authService.register(username))
+				.expectError(InvalidUsernameException.class)
+				.verify();
+	}
+
+	@Test
+	void register_WhenActiveUserExists_ThrowsUserAlreadyExists() {
+		String email = "user@example.com";
+		User existing = User.builder().id("u1").email(email).active(true).build();
+
+		when(validationService.isValidEmail(email)).thenReturn(true);
+		when(userRepository.findEmailInUse(email)).thenReturn(Mono.just(existing));
+
+		StepVerifier.create(authService.register(email))
+				.expectError(UserAlreadyExistsException.class)
+				.verify();
+	}
+
+	@Test
+	void register_WhenUnverifiedUserWithoutRequest_ShouldCreateAndSendVerification() {
+		String email = "user@example.com";
+		User existing = User.builder().id("u1").username(email).active(false).build();
+		VerificationRequest request = VerificationRequest.builder()
+				.code("ABC123")
+				.codeUsage(CodeUsage.EMAIL_VERIFICATION)
+				.credential(email)
+				.expiration(new Date(System.currentTimeMillis() + 600_000))
+				.refreshPause(new Date(System.currentTimeMillis() - 60_000))
+				.build();
+
+		when(validationService.isValidEmail(email)).thenReturn(true);
+		when(userRepository.findEmailInUse(email)).thenReturn(Mono.just(existing));
+		when(userVerificationService.createRequest(CodeUsage.EMAIL_VERIFICATION, email)).thenReturn(request);
+		when(userRepository.save(any(User.class))).thenAnswer(inv -> Mono.just(inv.getArgument(0)));
+		when(emailService.sendVerificationEmail(anyString(), anyString())).thenReturn(Mono.empty());
+
+		StepVerifier.create(authService.register(email))
+				.assertNext(user -> assertTrue(user.getVerificationRequest().isPresent()))
+				.verifyComplete();
+
+		verify(emailService).sendVerificationEmail(eq(email), anyString());
+	}
+
+	@Test
+	void register_WhenUnverifiedUserInCooldown_ShouldSaveWithoutSendingCode() {
+		String email = "user@example.com";
+		VerificationRequest requestInCooldown = VerificationRequest.builder()
+				.code("ABC123")
+				.codeUsage(CodeUsage.EMAIL_VERIFICATION)
+				.credential(email)
+				.expiration(new Date(System.currentTimeMillis() + 600_000))
+				.refreshPause(new Date(System.currentTimeMillis() + 60_000))
+				.build();
+		User existing = User.builder()
+				.id("u1")
+				.username(email)
+				.active(false)
+				.verificationRequest(requestInCooldown)
+				.build();
+
+		when(validationService.isValidEmail(email)).thenReturn(true);
+		when(userRepository.findEmailInUse(email)).thenReturn(Mono.just(existing));
+		when(userRepository.save(any(User.class))).thenAnswer(inv -> Mono.just(inv.getArgument(0)));
+
+		StepVerifier.create(authService.register(email))
+				.assertNext(user -> assertTrue(user.getVerificationRequest().isPresent()))
+				.verifyComplete();
+
+		verifyNoInteractions(emailService);
+		verifyNoInteractions(messageService);
+	}
+
+	@Test
+	void register_ValidPhone_CreatesUserAndSendsSms() {
+		String phone = "+5215551234567";
+		User createdUser = User.builder()
+				.active(false)
+				.verificationRequest(VerificationRequest.builder()
+						.code("ABC123")
+						.codeUsage(CodeUsage.PHONE_VERIFICATION)
+						.credential(phone)
+						.expiration(new Date(System.currentTimeMillis() + 600_000))
+						.refreshPause(new Date(System.currentTimeMillis() + 60_000))
+						.build())
+				.build();
+
+		when(validationService.isValidEmail(phone)).thenReturn(false);
+		when(validationService.isValidPhone(phone)).thenReturn(true);
+		when(userRepository.findPhoneInUse(phone)).thenReturn(Mono.empty());
+		when(userDomainService.createUser(phone)).thenReturn(createdUser);
+		when(userRepository.save(any(User.class))).thenAnswer(inv -> Mono.just(inv.getArgument(0)));
+		when(messageService.sendVerificationMessage(anyString(), anyString())).thenReturn(Mono.empty());
+
+		StepVerifier.create(authService.register(phone))
+				.assertNext(user -> assertTrue(user.getVerificationRequest().isPresent()))
+				.verifyComplete();
+
+		verify(messageService).sendVerificationMessage(eq(phone), anyString());
+	}
+
+	@Test
 	void refreshVerificationCode_ExistingUser_RefreshesCode() {
 		String userId = new ObjectId().toString();
 		String credential = "user@example.com";
@@ -250,6 +389,13 @@ class AuthenticationServiceTest {
 				.verifyComplete();
 
 		verify(emailService).sendVerificationEmail(eq(credential), anyString());
+	}
+
+	@Test
+	void refreshVerificationCode_WhenNoVerificationInProcess_ThrowsException() {
+		User user = User.builder().id("u-1").build();
+
+		assertThrows(NoVerificationInProcessException.class, () -> authService.refreshVerificationCode(user));
 	}
 
 	@Test
@@ -322,6 +468,13 @@ class AuthenticationServiceTest {
 	}
 
 	@Test
+	void verifyCode_WhenNoVerificationInProcess_ThrowsException() {
+		User user = User.builder().id("u-1").build();
+
+		assertThrows(NoVerificationInProcessException.class, () -> authService.verifyCode(user, "ABC123"));
+	}
+
+	@Test
 	void verifyCode_ExpiredCode_RefreshesAndThrows() {
 		String userId = new ObjectId().toString();
 		String code = "ABC123";
@@ -363,6 +516,40 @@ class AuthenticationServiceTest {
 	}
 
 	@Test
+	void verifyCode_ValidCodeForExistingUser_CompletesCredentialUpdate() {
+		String userId = "u-1";
+		VerificationRequest request = VerificationRequest.builder()
+				.code("ABC123")
+				.codeUsage(CodeUsage.EMAIL_VERIFICATION)
+				.credential("new@example.com")
+				.expiration(new Date(System.currentTimeMillis() + 600_000))
+				.refreshPause(new Date(System.currentTimeMillis() - 1_000))
+				.build();
+		User user = User.builder()
+				.id(userId)
+				.email("old@example.com")
+				.active(true)
+				.verificationRequest(request)
+				.build();
+
+		doNothing().when(userVerificationService).validateRequest(request, "ABC123");
+		doAnswer(inv -> {
+			User u = inv.getArgument(0);
+			u.setEmail("new@example.com");
+			u.clearVerificationRequest();
+			return null;
+		}).when(userVerificationService).completeRequest(any(User.class));
+		when(userRepository.save(any(User.class))).thenAnswer(inv -> Mono.just(inv.getArgument(0)));
+
+		StepVerifier.create(authService.verifyCode(user, "ABC123"))
+				.assertNext(updated -> {
+					assertEquals("new@example.com", updated.getEmail());
+					assertTrue(updated.getVerificationRequest().isEmpty());
+				})
+				.verifyComplete();
+	}
+
+	@Test
 	void updateCredential_ValidEmail_CreatesVerificationRequest() {
 		String userId = new ObjectId().toString();
 		String newEmail = "new@example.com";
@@ -401,6 +588,50 @@ class AuthenticationServiceTest {
 				.verifyComplete();
 
 		verify(emailService).sendVerificationEmail(eq(newEmail), anyString());
+	}
+
+	@Test
+	void forgotPassword_UserNotFound_CompletesEmpty() {
+		when(userRepository.findByAnyCredential("unknown@example.com")).thenReturn(Mono.empty());
+
+		StepVerifier.create(authService.forgotPassword("unknown@example.com", "NewPassword123!"))
+				.verifyComplete();
+	}
+
+	@Test
+	void forgotPassword_NewUser_ThrowsRegistrationNotCompleted() {
+		User user = User.builder().id("u1").active(false).build();
+		when(userRepository.findByAnyCredential("user@example.com")).thenReturn(Mono.just(user));
+
+		StepVerifier.create(authService.forgotPassword("user@example.com", "NewPassword123!"))
+				.expectError(RegistrationNotCompletedException.class)
+				.verify();
+	}
+
+	@Test
+	void forgotPassword_ExistingUser_TriggersPasswordResetFlow() {
+		User user = User.builder().id("u1").email("user@example.com").active(true).build();
+		User updated = User.builder()
+				.id("u1")
+				.email("user@example.com")
+				.active(true)
+				.verificationRequest(VerificationRequest.builder()
+						.code("ABC123")
+						.codeUsage(CodeUsage.PASSWORD_RESET)
+						.credential("encoded")
+						.expiration(new Date(System.currentTimeMillis() + 600_000))
+						.refreshPause(new Date(System.currentTimeMillis() + 60_000))
+						.build())
+				.build();
+
+		when(userRepository.findByAnyCredential("user@example.com")).thenReturn(Mono.just(user));
+		when(userDomainService.updateCredential(user, CodeUsage.PASSWORD_RESET, "NewPassword123!")).thenReturn(updated);
+		when(userRepository.save(any(User.class))).thenReturn(Mono.just(updated));
+		when(emailService.sendVerificationEmail(eq("user@example.com"), anyString())).thenReturn(Mono.empty());
+
+		StepVerifier.create(authService.forgotPassword("user@example.com", "NewPassword123!"))
+				.assertNext(result -> assertEquals(CodeUsage.PASSWORD_RESET, result.getVerificationRequest().orElseThrow().getCodeUsage()))
+				.verifyComplete();
 	}
 
 	@Test
