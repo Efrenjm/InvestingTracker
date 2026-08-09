@@ -1,0 +1,6 @@
+[submodule "backend"]
+	path = backend
+	url = git@github.com:Efrenjm/InvestmentTrackerBackend.git
+[submodule "frontend"]
+	path = frontend
+	url = git@github.com:Efrenjm/InvestingTrackerFrontend.git
