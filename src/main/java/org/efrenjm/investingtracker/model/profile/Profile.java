@@ -1,6 +1,8 @@
 package org.efrenjm.investingtracker.model.profile;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import lombok.*;
+import org.bson.types.ObjectId;
 import org.efrenjm.investingtracker.model.organization.Organization;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.DBRef;
@@ -20,7 +22,7 @@ import java.util.List;
 public class Profile {
     @Id
     @Field("_id")
-    private String id;
+    private ObjectId id;
 
     private String username;
 
@@ -42,9 +44,8 @@ public class Profile {
     private String profilePicture;
 
     @DBRef
+    @JsonManagedReference
     private List<Organization> organizations;
-
-    private Boolean active;
 
     @Field("created_at")
     private Date createdAt;

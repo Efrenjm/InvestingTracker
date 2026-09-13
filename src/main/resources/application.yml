@@ -1,0 +1,34 @@
+server:
+  port: 8080
+spring:
+  application:
+    name: InvestingTracker
+  webflux:
+    base-path: /api
+  ssl:
+    bundle:
+      pem:
+        mongodb-bundle:
+          keystore:
+            certificate: ${MONGO_CERT_PATH}
+            private-key: ${MONGO_CERT_PATH}
+  data:
+    mongodb:
+      uri: ${MONGODB_URI}
+      database: ${MONGODB_DATABASE}
+      ssl:
+        enabled: true
+        bundle: mongodb-bundle
+  mail:
+    host: ${MAIL_HOST}
+    port: ${MAIL_PORT}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+app:
+  base_url: ${BASE_URL}

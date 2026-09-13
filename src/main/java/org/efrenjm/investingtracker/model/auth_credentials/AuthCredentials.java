@@ -1,6 +1,7 @@
 package org.efrenjm.investingtracker.model.auth_credentials;
 
 import lombok.*;
+import org.bson.types.ObjectId;
 import org.efrenjm.investingtracker.model.profile.Profile;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.DBRef;
@@ -10,6 +11,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -39,7 +41,11 @@ public class AuthCredentials implements UserDetails {
     @DBRef
     private Profile profile;
 
-    private boolean active = true;
+    private boolean active = false;
+
+    private String verificationToken;
+
+    private Date tokenExpiration;
 
     private Set<GrantedAuthority> roles = new HashSet<GrantedAuthority>();
 

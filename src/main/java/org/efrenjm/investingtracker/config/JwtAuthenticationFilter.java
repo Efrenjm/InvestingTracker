@@ -1,6 +1,7 @@
 package org.efrenjm.investingtracker.config;
 
 import lombok.NonNull;
+import org.efrenjm.investingtracker.service.utils.JwtService;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;

@@ -1,18 +1,15 @@
 package org.efrenjm.investingtracker.handler.authentication;
 
-import org.efrenjm.investingtracker.exception.authentication.InvalidCredentialsException;
-import org.efrenjm.investingtracker.exception.authentication.MissingCredentialsException;
-import org.efrenjm.investingtracker.exception.authentication.UserAlreadyExistsException;
-import org.efrenjm.investingtracker.exception.authentication.UserRegistrationException;
+import org.efrenjm.investingtracker.controller.authentication.AuthenticationController;
+import org.efrenjm.investingtracker.exception.authentication.*;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.web.bind.support.WebExchangeBindException;
 
-import java.util.stream.Collectors;
-
-@RestControllerAdvice
+@RestControllerAdvice(assignableTypes = { AuthenticationController.class})
+@Order(1)
 public class AuthenticationExceptionHandler {
 	@ExceptionHandler(InvalidCredentialsException.class)
 	public ResponseEntity<String> handleInvalidCredentials(InvalidCredentialsException ex) {
@@ -30,7 +27,22 @@ public class AuthenticationExceptionHandler {
 	}
 
 	@ExceptionHandler(UserRegistrationException.class)
-	public ResponseEntity<String> handleUserCreation(UserRegistrationException ex) {
-		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ex.getMessage());
+	public ResponseEntity<String> handleUserRegistration(UserRegistrationException ex) {
+		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
+	}
+
+	@ExceptionHandler(AccountAlreadyVerifiedException.class)
+	public ResponseEntity<String> handleAccountAlreadyVerified(AccountAlreadyVerifiedException ex) {
+		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
+	}
+
+	@ExceptionHandler(InvalidTokenException.class)
+	public ResponseEntity<String> handleInvalidToken(InvalidTokenException ex) {
+		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
+	}
+
+	@ExceptionHandler(TokenExpiredException.class)
+	public ResponseEntity<String> handleTokenExpired(TokenExpiredException ex) {
+		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
 	}
 }

@@ -12,6 +12,8 @@ public interface AuthCredentialsRepository extends ReactiveMongoRepository<AuthC
 
 	Mono<UserDetails> findByUsername(String username);
 
+	Mono<AuthCredentials> findByVerificationToken(String token);
+
 	Mono<Boolean> existsByEmailOrPhoneNumber(String email, String phone);
 
 	Mono<Boolean> existsByEmail(String email);

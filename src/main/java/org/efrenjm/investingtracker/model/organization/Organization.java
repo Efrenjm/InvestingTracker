@@ -1,6 +1,8 @@
 package org.efrenjm.investingtracker.model.organization;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import lombok.*;
+import org.bson.types.ObjectId;
 import org.efrenjm.investingtracker.model.account.Account;
 import org.efrenjm.investingtracker.model.profile.Profile;
 import org.springframework.data.annotation.Id;
@@ -22,7 +24,7 @@ import java.util.List;
 public class Organization {
     @Id
     @Field("_id")
-    private String id;
+    private ObjectId id;
 
     private String name;
 
@@ -31,6 +33,7 @@ public class Organization {
     private List<UserRole> users;
 
     @DBRef
+    @JsonBackReference
     @Field("created_by")
     private Profile createdBy;
 

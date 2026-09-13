@@ -1,4 +1,4 @@
-package org.efrenjm.investingtracker.config;
+package org.efrenjm.investingtracker.service.utils;
 
 import io.jsonwebtoken.*;
 import org.springframework.security.core.userdetails.UserDetails;

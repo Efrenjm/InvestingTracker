@@ -1,6 +1,7 @@
 package org.efrenjm.investingtracker.model.account;
 
 import lombok.*;
+import org.bson.types.ObjectId;
 import org.efrenjm.investingtracker.model.organization.Organization;
 import org.efrenjm.investingtracker.model.rule.Rule;
 import org.springframework.data.annotation.Id;
@@ -19,7 +20,7 @@ import java.util.List;
 public class Account {
     @Id
     @Field("_id")
-    private String id;
+    private ObjectId id;
 
     private Organization organization;
 

@@ -1,4 +1,4 @@
-package org.efrenjm.investingtracker.config;
+package org.efrenjm.investingtracker.service.authentication;
 
 import org.efrenjm.investingtracker.repository.AuthCredentialsRepository;
 import org.springframework.security.core.userdetails.ReactiveUserDetailsService;
