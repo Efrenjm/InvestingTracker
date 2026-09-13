@@ -36,8 +36,8 @@ public class AuthenticationExceptionHandler {
 		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
 	}
 
-	@ExceptionHandler(InvalidTokenException.class)
-	public ResponseEntity<String> handleInvalidToken(InvalidTokenException ex) {
+	@ExceptionHandler(InvalidCodeException.class)
+	public ResponseEntity<String> handleInvalidToken(InvalidCodeException ex) {
 		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
 	}
 

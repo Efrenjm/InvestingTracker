@@ -1,27 +1,27 @@
 package org.efrenjm.investingtracker.service.user_management;
 
 import org.bson.types.ObjectId;
-import org.efrenjm.investingtracker.dto.user_management.ProfileUpdateRequestDTO;
-import org.efrenjm.investingtracker.model.auth_credentials.AuthCredentials;
-import org.efrenjm.investingtracker.model.organization.Organization;
-import org.efrenjm.investingtracker.model.profile.Profile;
+import org.efrenjm.investingtracker.dto.controller.user_management.ProfileUpdateRequestDTO;
+import org.efrenjm.investingtracker.dto.model.organization.OrganizationSummary;
+import org.efrenjm.investingtracker.model.user.User;
+import org.efrenjm.investingtracker.dto.model.user.PublicProfile;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 public interface IUserManagementService {
-	Mono<Profile> updateProfile(Profile userProfile, ProfileUpdateRequestDTO updateRequest);
+	Mono<User> updateProfile(User user, ProfileUpdateRequestDTO updateRequest);
 
-	Mono<Void> deleteUser(AuthCredentials userCredentials);
+	Mono<Void> deleteUser(User userCredentials);
 
-	Flux<Profile> getFriends(Profile userProfile);
+	Flux<PublicProfile> getFriends(User user);
 
-	Mono<Profile> addFriend(Profile userProfile, ObjectId friendId);
+	Mono<User> addFriend(User user, ObjectId friendId);
 
-	Mono<Profile> removeFriend(Profile userProfile, ObjectId friendToRemoveId);
+	Mono<User> removeFriend(User user, ObjectId friendToRemoveId);
 
-	Flux<Organization> getOrganizations(Profile userProfile);
+	Flux<OrganizationSummary> getOrganizations(User user);
 
-	Mono<Profile> joinOrganization(Profile userProfile, ObjectId organizationId);
+	Mono<User> joinOrganization(User user, ObjectId organizationId);
 
-	Mono<Profile> quitOrganization(Profile userProfile, ObjectId organizationId);
+	Mono<User> quitOrganization(User user, ObjectId organizationId);
 }

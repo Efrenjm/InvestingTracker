@@ -3,20 +3,16 @@ package org.efrenjm.investingtracker.service.authentication;
 import lombok.AllArgsConstructor;
 import org.bson.types.ObjectId;
 import org.efrenjm.investingtracker.exception.authentication.*;
-import org.efrenjm.investingtracker.model.account.Account;
+import org.efrenjm.investingtracker.model.organization.account.Account;
 import org.efrenjm.investingtracker.model.organization.Organization;
-import org.efrenjm.investingtracker.model.organization.UserRole;
-import org.efrenjm.investingtracker.model.profile.Profile;
-import org.efrenjm.investingtracker.repository.AccountRepository;
-import org.efrenjm.investingtracker.service.model.AuthCredentialsService;
-import org.efrenjm.investingtracker.service.utils.EmailService;
+import org.efrenjm.investingtracker.model.organization.account.AccountType;
+import org.efrenjm.investingtracker.model.organization.role.UserRole;
+import org.efrenjm.investingtracker.model.user.CodeUsage;
+import org.efrenjm.investingtracker.model.user.User;
+import org.efrenjm.investingtracker.service.authentication.code_verification.CodeVerificationService;
+import org.efrenjm.investingtracker.service.model.organization.OrganizationService;
+import org.efrenjm.investingtracker.service.model.user.UserService;
 import org.efrenjm.investingtracker.service.utils.JwtService;
-import org.efrenjm.investingtracker.dto.authentication.RegisterRequestDTO;
-import org.efrenjm.investingtracker.model.auth_credentials.AuthCredentials;
-import org.efrenjm.investingtracker.repository.OrganizationRepository;
-import org.efrenjm.investingtracker.repository.ProfileRepository;
-import org.springframework.http.ResponseCookie;
-import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,179 +22,170 @@ import reactor.core.publisher.Mono;
 
 import java.util.Date;
 import java.util.List;
-import java.util.Random;
 
 @Service
 @AllArgsConstructor
-public class AuthenticationService implements IAuthenticationService {
-	private static final int TOKEN_EXPIRATION = 10 * 60 * 1000;
-	private static final String ALLOWED_CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-	private static final int CODE_LENGTH = 6;
-
-	private final AuthCredentialsService authCredentialsService;
-	private final ProfileRepository profileRepository;
-	private final OrganizationRepository organizationRepository;
+public class AuthenticationService /*implements IAuthenticationService*/ {
+	private final UserService userService;
+	private final OrganizationService organizationService;
+	private final CodeVerificationService codeVerificationService;
+	
 	private final PasswordEncoder passwordEncoder;
 	private final JwtService jwtService;
-	private final EmailService emailService;
 	private final TransactionalOperator transactionalOperator;
-	private final AccountRepository accountRepository;
 
 	public Mono<Void> login(String email, String phone, String password, ServerWebExchange exchange) {
-		return authCredentialsService.fetchUserByEmailOrPhone(email, phone)
+		return userService.fetchUserByEmailOrPhone(email, phone)
 				.switchIfEmpty(Mono.error(new InvalidCredentialsException()))
 				.flatMap(user -> {
 					if (!passwordEncoder.matches(password, user.getPassword())) {
 						return Mono.error(new InvalidCredentialsException());
 					}
+
+					if (!user.isActive()) {
+						return Mono.error(new Error()); /*TODO: create AccountNotVerifiedException*/
+					}
+
 					return jwtService.generateToken(user)
-							.flatMap(token -> setTokenInCookie(token, exchange.getResponse()));
+							.flatMap(code -> jwtService.setTokenInCookie(code, exchange.getResponse()));
 				});
 	}
 
-	public Mono<AuthCredentials> register(RegisterRequestDTO user) {
-		String email = user.getEmail();
-		String phone = user.getPhone();
-		String password = passwordEncoder.encode(user.getPassword());
-
-		return authCredentialsService.existsUserByEmailOrPhone(email, phone)
+	public Mono<User> register(String email, String phone, String password) {
+		String encodedPassword = passwordEncoder.encode(password);
+		return userService.isEmailOrPhoneTaken(email, phone)
 				.flatMap(exists -> {
 					if (exists) {
 						return Mono.error(new UserAlreadyExistsException());
 					}
 
-					AuthCredentials newCredentials = AuthCredentials.builder()
-							.email(email)
-							.phoneNumber(phone)
-							.password(password)
+					Date now = new Date();
+					CodeUsage codeUsage = email != null ? CodeUsage.EMAIL_VERIFICATION : CodeUsage.PHONE_VERIFICATION;
+					User newUser = User.builder()
+							.updateEmailRequest(email)
+							.updatePhoneRequest(phone)
+							.password(encodedPassword)
 							.active(false)
+							.createdAt(now)
+							.updatedAt(now)
 							.build();
 
-					return createTokenVerificationRequest(newCredentials)
+					return codeVerificationService.createRequest(newUser, codeUsage)
 							.onErrorMap(e -> new UserRegistrationException("Error in user registration: " + e.getMessage()));
 				});
 	}
 
 	@Transactional
-	public Mono<Profile> verifyToken(ObjectId userId, String token) {  // TODO: Change name to verifyToken
-		return authCredentialsService.fetchUser(userId)
-				.switchIfEmpty(Mono.error(new Error())) // TODO: Change to user not found
-				.flatMap(user -> {
-					if (!user.getVerificationToken().equals(token)) {
-						return Mono.error(new InvalidTokenException());
-					}
+	public Mono<User> verifyCode(ObjectId userId, String code) {
+		return userService.fetchUser(userId)
+				.flatMap(user -> codeVerificationService.validate(user, code)
+						.flatMap(isCodeValid -> {
+							if (!isCodeValid) {
+								return Mono.error(new InvalidCodeException());
+							}
 
-					return completeRegistration(user);
-				});
+							if (user.isNewUser()) {
+								return completeRegistration(user);
+							} else {
+								return completeCredentialsUpdate(user);
+							}
+						}));
 	}
 
-	public Mono<Boolean> generateNewVerificationToken(ObjectId userId) {
-		return authCredentialsService.fetchUser(userId)
+	public Mono<Boolean> generateNewVerificationCode(ObjectId userId, CodeUsage codeUsage) {
+		return userService.fetchUser(userId)
 				.flatMap(credentials -> {
+					System.out.println(credentials);
 					if (credentials.isActive()) {
 						return Mono.error(new AccountAlreadyVerifiedException());
 					}
 
-					return createTokenVerificationRequest(credentials)
+					return codeVerificationService.createRequest(credentials, codeUsage)
 							.thenReturn(true);
 				})
-				.onErrorMap(e -> new UserRegistrationException("Error generating new verification token: " + e.getMessage()));
+				.onErrorMap(e -> new UserRegistrationException("Error generating new verification code: " + e.getMessage()));
 	}
 
-	private Mono<Profile> completeRegistration(AuthCredentials authCredentials) {
-		Date now = new Date();
-
-		if (authCredentials.getTokenExpiration().before(now)) {
-			return createTokenVerificationRequest(authCredentials)
-					.onErrorMap(e -> new UserRegistrationException("Error verifying email: " + e.getMessage()))
-					.then(Mono.error(new TokenExpiredException()));
-		} else if (authCredentials.isActive()) {
-			return Mono.error(new AccountAlreadyVerifiedException());
+	public Mono<User> updateEmail(User user, String newEmail) {
+		if (user.getUpdateEmailRequest() != null) {
+			return Mono.error(new InvalidCodeException());
 		}
 
-		Profile newProfile = Profile.builder()
-				.createdAt(now)
-				.updatedAt(now)
-				.lastLogin(now)
-				.email(authCredentials.getEmail())
-				.phoneNumber(authCredentials.getPhoneNumber())
-				.build();
+		user.setUpdateEmailRequest(newEmail);
+		user.setCodeUsage(CodeUsage.EMAIL_VERIFICATION);
 
-		Organization newOrganization = Organization.builder()
-				.name("Personal")
-				.description("Personal organization")
-				.createdAt(now)
-				.updatedAt(now)
-				.build();
+		return codeVerificationService.createRequest(user, CodeUsage.EMAIL_VERIFICATION)
+				.then(Mono.just(user));
+	}
+
+	public Mono<User> updatePhone(User user, String newPhone) {
+		if (user.getUpdatePhoneRequest() != null) {
+			return Mono.error(new InvalidCodeException());
+		}
+
+		user.setUpdatePhoneRequest(newPhone);
+		user.setCodeUsage(CodeUsage.PHONE_VERIFICATION);
+
+		return codeVerificationService.createRequest(user, CodeUsage.PHONE_VERIFICATION)
+				.then(Mono.just(user));
+	}
+
+	public Mono<User> updatePassword(User user, String oldPassword, String newPassword) {
+		if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
+			return Mono.error(new InvalidCredentialsException());
+		}
+
+		user.setPassword(passwordEncoder.encode(newPassword));
+		return userService.saveUser(user);
+	}
+
+	private Mono<User> completeRegistration(User user) {
+		if (user.isActive())
+		{
+			user.clearVerificationRequest();
+
+			return userService.saveUser(user)
+					.flatMap(savedUser -> Mono.error(new UserAlreadyExistsException())); // TODO: Change to user already verified
+		}
+		Date now = new Date();
 
 		Account newAccount = Account.builder()
+				.id(new ObjectId())
 				.name("Personal")
 				.description("Personal account")
-				.type("DEBIT")
+				.type(AccountType.DEBIT)
 				.available(0.0)
 				.createdAt(now)
 				.updatedAt(now)
 				.build();
 
-		return profileRepository.save(newProfile)
-				.flatMap(savedProfile -> accountRepository.save(newAccount)
-						.flatMap(savedAccount -> {
-							newOrganization.setCreatedBy(savedProfile);
-							newOrganization.setMembers(List.of(new UserRole(savedProfile, "OWNER")));
-							newOrganization.setAccounts(List.of(savedAccount));
-							return organizationRepository.save(newOrganization)
-									.flatMap(savedOrganization -> {
-										savedProfile.setOrganizations(List.of(savedOrganization));
-										savedAccount.setOrganization(savedOrganization);
-										return accountRepository.save(savedAccount)
-												.then(profileRepository.save(savedProfile));
-									});
-						})
-				)
-				.flatMap(savedProfile -> {
-					authCredentials.setActive(true);
-					authCredentials.setVerificationToken(null);
-					authCredentials.setTokenExpiration(null);
-					authCredentials.setProfile(savedProfile);
-					return authCredentialsService.saveUser(authCredentials)
-							.thenReturn(savedProfile);
+		Organization newOrganization = Organization.builder()
+				.name("Personal")
+				.description("Personal organization")
+				.accounts(List.of(newAccount))
+				.members(List.of(new UserRole(user.getId(), "OWNER")))
+				.createdBy(user.getId())
+				.createdAt(now)
+				.updatedAt(now)
+				.build();
+
+		return organizationService.saveOrganization(newOrganization)
+				.flatMap(savedOrganization -> {
+					user.setOrganizations(List.of(savedOrganization.getId()));
+					user.setActive(true);
+					user.codeVerified();
+
+					return userService.saveUser(user);
 				})
 				.as(transactionalOperator::transactional)
 				.onErrorMap(e -> new UserRegistrationException("Error verifying email: " + e.getMessage()));
 	}
 
-	private Mono<Void> setTokenInCookie(String token, ServerHttpResponse response) {
-		ResponseCookie cookie = ResponseCookie.from("jwt", token)
-				.httpOnly(true)
-//				.secure(true)    // TODO: Implement HTTPS
-				.path("/")
-				.maxAge(24 * 60 * 60)
-				.build();
-		response.addCookie(cookie);
-		return response.setComplete();
-	}
+	private Mono<User> completeCredentialsUpdate(User user) {
+		user.codeVerified();
 
-	private Mono<AuthCredentials> createTokenVerificationRequest(AuthCredentials authCredentials) {
-		Date now = new Date();
-		String token = generateVerificationToken();
-
-		authCredentials.setVerificationToken(token);
-		authCredentials.setTokenExpiration(new Date(now.getTime() + TOKEN_EXPIRATION));
-
-		return authCredentialsService.saveUser(authCredentials)
-				.doOnSuccess(savedUser -> emailService.sendVerificationEmail(savedUser.getEmail(), savedUser.getVerificationToken()));
-	}
-
-	private static String generateVerificationToken() {
-		Random random = new Random();
-		StringBuilder code = new StringBuilder(CODE_LENGTH);
-
-		for (int i = 0; i < CODE_LENGTH; i++) {
-			int randomIndex = random.nextInt(ALLOWED_CHARACTERS.length());
-			char randomChar = ALLOWED_CHARACTERS.charAt(randomIndex);
-			code.append(randomChar);
-		}
-
-		return code.toString();
+		return userService.saveUser(user)
+				.onErrorMap(e -> new UserRegistrationException("Error verifying email: " + e.getMessage()));
+				/* TODO: Change UserRegistrationException for the correct error */
 	}
 }

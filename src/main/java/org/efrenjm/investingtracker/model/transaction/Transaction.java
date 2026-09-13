@@ -1,13 +1,11 @@
 package org.efrenjm.investingtracker.model.transaction;
 
 import lombok.*;
-import org.efrenjm.investingtracker.model.account.Account;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
-import java.time.LocalDate;
-import java.time.ZonedDateTime;
+import java.util.Date;
 import java.util.List;
 
 @NoArgsConstructor
@@ -28,10 +26,10 @@ public class Transaction {
     private String type;
 
     @Field("from_accounts")
-    private List<Account> fromAccounts;
+    private List<AccountAllocation> fromAccounts;
 
     @Field("to_accounts")
-    private List<Account> toAccounts;
+    private List<AccountAllocation> toAccounts;
 
     @Field("total_amount")
     private Double totalAmount;
@@ -39,11 +37,11 @@ public class Transaction {
     private List<String> categories;
 
     @Field("transaction_date")
-    private LocalDate transactionDate;
+    private Date transactionDate;
 
     @Field("created_at")
-    private ZonedDateTime createdAt;
+    private Date createdAt;
 
     @Field("updated_at")
-    private ZonedDateTime updatedAt;
+    private Date updatedAt;
 }

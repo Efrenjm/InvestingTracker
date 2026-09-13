@@ -27,7 +27,12 @@ public class SecurityConfig {
 				.formLogin(ServerHttpSecurity.FormLoginSpec::disable)
 				.httpBasic(ServerHttpSecurity.HttpBasicSpec::disable)
 				.authorizeExchange(exchange -> exchange
-						.pathMatchers("/auth/**").permitAll()
+						.pathMatchers(
+								"/auth/login",
+								"/auth/register",
+								"/auth/refresh-code/**",
+								"/auth/verify-code"
+						).permitAll()
 						.anyExchange().authenticated()
 				)
 				.addFilterAt(jwtAuthenticationFilter(), SecurityWebFiltersOrder.AUTHENTICATION)

@@ -17,6 +17,7 @@ public class EmailService implements IEmailService{
 		message.setSubject("Please verify your email address");
 		message.setText("Use the following code to verify your email: " + verificationToken);
 
+		System.out.println(message);
 		mailSender.send(message);
 	}
 }

@@ -2,108 +2,107 @@ package org.efrenjm.investingtracker.service.user_management;
 
 import lombok.AllArgsConstructor;
 import org.bson.types.ObjectId;
-import org.efrenjm.investingtracker.dto.user_management.ProfileUpdateRequestDTO;
+import org.efrenjm.investingtracker.dto.controller.user_management.ProfileUpdateRequestDTO;
+import org.efrenjm.investingtracker.dto.model.organization.OrganizationSummary;
 import org.efrenjm.investingtracker.exception.user_management.OrganizationNotFoundException;
-import org.efrenjm.investingtracker.exception.user_management.ProfileNotFoundException;
-import org.efrenjm.investingtracker.model.auth_credentials.AuthCredentials;
-import org.efrenjm.investingtracker.model.organization.Organization;
-import org.efrenjm.investingtracker.model.profile.Profile;
+import org.efrenjm.investingtracker.exception.user_management.UserNotFoundException;
+import org.efrenjm.investingtracker.model.user.User;
+import org.efrenjm.investingtracker.dto.model.user.PublicProfile;
 import org.efrenjm.investingtracker.repository.OrganizationRepository;
-import org.efrenjm.investingtracker.repository.ProfileRepository;
+import org.efrenjm.investingtracker.service.model.user.UserService;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.util.Date;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
 public class UserManagementService implements IUserManagementService {
-	private final ProfileRepository profileRepository;
+	private final UserService userService;
 	private final OrganizationRepository organizationRepository;
 
-	public Mono<Profile> updateProfile(Profile userProfile, ProfileUpdateRequestDTO updateRequest) {
-		userProfile.setFirstName(updateRequest.getFirstName());
-		userProfile.setMiddleName(updateRequest.getMiddleName());
-		userProfile.setLastName(updateRequest.getLastName());
-		userProfile.setProfilePicture(updateRequest.getProfilePicture());
-		userProfile.setUpdatedAt(new Date());
+	public Mono<User> updateProfile(User user, ProfileUpdateRequestDTO updateRequest) {
+		user.setUsername(updateRequest.getUsername());
+		user.setFirstName(updateRequest.getFirstName());
+		user.setMiddleName(updateRequest.getMiddleName());
+		user.setLastName(updateRequest.getLastName());
+		user.setProfilePicture(updateRequest.getProfilePicture());
 
-		return profileRepository.save(userProfile); /* TODO: catch error */
+		return userService.saveUser(user); /* TODO: catch error */
 	}
 
-	/* TODO: Delete personal organization and authentication method */
-	public Mono<Void> deleteUser(AuthCredentials userCredentials) {
-		Profile userProfile = userCredentials.getProfile();
-		ObjectId userId = userProfile.getId();
-		List<Organization> organizations = userCredentials.getProfile().getOrganizations();
-		List<Profile> friends = userCredentials.getProfile().getFriends();
+	/* TODO: Delete personal organization */
+	public Mono<Void> deleteUser(User user) {
+		ObjectId userId = user.getId();
+		List<ObjectId> organizations = user.getOrganizations();
+		List<ObjectId> friends = user.getFriends();
 
-		friends.forEach(friend -> friend.getFriends().remove(userProfile));
+//		friends.forEach(friend -> friend.getFriends().remove(user));
+//
+//		organizations.forEach(organization -> {
+//			if (organization.getMembers().size() == 1) {
+//				organizationRepository.delete(organization).subscribe(); /* TODO: Delete accounts */
+//			} else {
+//				organization.getMembers()
+//						.removeIf(member -> member.getUser().getId().equals(userId));
+//			}
+//		});
 
-		organizations.forEach(organization -> {
-			if (organization.getMembers().size() == 1)
-				organizationRepository.delete(organization).subscribe(); /* TODO: Delete accounts */
-			else
-				organization.getMembers()
-						.removeIf(member -> member.getUser().getId().equals(userId));
-		});
-
-		return profileRepository.existsById(userId)
-				.switchIfEmpty(Mono.error(new ProfileNotFoundException(userId.toString())))
-				.then(profileRepository.deleteById(userId));
+//		userService.fetchOrganizations(userId)
+//				.flatMap(organization -> organization.getMembers().stream()
+//						.filter(member -> member.getUser().getId().equals(userId))
+//						.findFirst()
+//						.map(member -> organizationRepository.save(organization))
+//						.orElse(Mono.empty()))
+//				.subscribe();
+		return userService.deleteUser(userId);
 	}
 
-	public Flux<Profile> getFriends(Profile userProfile) {
-		return profileRepository.findAllById(userProfile.getFriends().stream()
-				.map(Profile::getId)
-				.collect(Collectors.toList()));
+	public Flux<PublicProfile> getFriends(User user) {
+		return userService.fetchFriends(user.getId());
 	}
 
-	public Mono<Profile> addFriend(Profile userProfile, ObjectId friendId) {
-		return profileRepository.findById(friendId)
+	public Mono<User> addFriend(User user, ObjectId friendId) {
+		return userService.fetchUser(friendId)
 				/* TODO: Add logic to invite friends */
-				.switchIfEmpty(Mono.error(new ProfileNotFoundException(friendId.toString())))
+				.switchIfEmpty(Mono.error(new UserNotFoundException(friendId.toString())))
 				.flatMap(friendProfile -> {
-					userProfile.getFriends().add(friendProfile);
-					return profileRepository.save(userProfile);
+					user.getFriends().add(friendProfile.getId());
+					return userService.saveUser(user);
 				});
 	}
 
-	public Mono<Profile> removeFriend(Profile userProfile, ObjectId friendToRemoveId) {
-		List<Profile> updatedFriendsList = userProfile.getFriends().stream()
-				.filter(friend -> !friend.getId().equals(friendToRemoveId))
+	public Mono<User> removeFriend(User user, ObjectId friendToRemoveId) {
+		List<ObjectId> updatedFriendsList = user.getFriends().stream()
+				.filter(friendId -> !friendId.equals(friendToRemoveId))
 				.toList();
 
-		userProfile.setFriends(updatedFriendsList);
+		user.setFriends(updatedFriendsList);
 
-		return profileRepository.save(userProfile);
+		return userService.saveUser(user);
 	}
 
-	public Flux<Organization> getOrganizations(Profile userProfile) {
-		return organizationRepository.findAllById(userProfile.getOrganizations().stream()
-				.map(Organization::getId)
-				.collect(Collectors.toList()));
+	public Flux<OrganizationSummary> getOrganizations(User user) {
+		return userService.fetchOrganizations(user.getId());
 	}
 
-	public Mono<Profile> joinOrganization(Profile userProfile, ObjectId organizationId) {
+	public Mono<User> joinOrganization(User user, ObjectId organizationId) {
 		return organizationRepository.findById(organizationId)
 				.switchIfEmpty(Mono.error(new OrganizationNotFoundException(organizationId.toString())))
 				.flatMap(organization -> {
-					userProfile.getOrganizations().add(organization);
-					return profileRepository.save(userProfile);
+					user.getOrganizations().add(organization.getId());
+					return userService.saveUser(user);
 				});
 	}
 
-	public Mono<Profile> quitOrganization(Profile userProfile, ObjectId organizationId) {
-		List<Organization> updatedOrganizationList = userProfile.getOrganizations().stream()
-				.filter(organization -> !organization.getId().equals(organizationId))
+	public Mono<User> quitOrganization(User user, ObjectId organizationToQuitId) {
+		List<ObjectId> updatedOrganizationList = user.getOrganizations().stream()
+				.filter(organizationId -> !organizationId.equals(organizationToQuitId))
 				.toList();
 
-		userProfile.setOrganizations(updatedOrganizationList);
+		user.setOrganizations(updatedOrganizationList);
 
-		return profileRepository.save(userProfile);
+		return userService.saveUser(user);
 	}
 }

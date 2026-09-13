@@ -1,14 +1,11 @@
 package org.efrenjm.investingtracker.model.organization;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
 import lombok.*;
 import org.bson.types.ObjectId;
-import org.efrenjm.investingtracker.model.account.Account;
-import org.efrenjm.investingtracker.model.profile.Profile;
+import org.efrenjm.investingtracker.model.organization.account.Account;
+import org.efrenjm.investingtracker.model.organization.role.UserRole;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.mapping.DocumentReference;
 import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.util.Date;
@@ -32,10 +29,8 @@ public class Organization {
 
     private List<UserRole> members;
 
-    @DocumentReference
-    @JsonBackReference
     @Field("created_by")
-    private Profile createdBy;
+    private ObjectId createdBy;
 
     @Field("created_at")
     private Date createdAt;
@@ -43,7 +38,7 @@ public class Organization {
     @Field("updated_at")
     private Date updatedAt;
 
-    @DocumentReference
-    @JsonManagedReference
     private List<Account> accounts;
+
+    private OrganizationConfig configuration;
 }
