@@ -1,18 +1,10 @@
 # Backend Architecture
 
-## Purpose and status
+## Authority and status
 
-This document describes both the backend's observed structure and the target boundaries for new work and focused migrations. Sections labeled as current state report what exists in the repository at the time of writing. Target sections define the ports-and-adapters direction; they do not claim that existing packages already conform or authorize a repository-wide move.
+This is the sole authority for backend package ownership, dependency direction, ports, adapters and structural migration. [SYSTEM_DESIGN.md](SYSTEM_DESIGN.md) owns runtime flows and system contracts; [DEVELOPMENT.md](DEVELOPMENT.md) owns coding, verification and contributor practices. [AGENTS.md](../AGENTS.md) routes tasks to these guides.
 
-## Technology baseline
-
-- Java 21 and Spring Boot 3.3.5 are configured in `build.gradle`.
-- HTTP uses Spring WebFlux and Project Reactor.
-- Persistence uses reactive MongoDB; Redis infrastructure is reactive and supports session-related behavior.
-- Security uses Spring Security with JWT cookie infrastructure.
-- External delivery integrations include Spring Mail and Twilio.
-- OpenAPI documentation uses springdoc; tests use JUnit 5, Reactor Test, Mockito, Spring Security Test, and Testcontainers.
-- Unit tests and integration tests are separate Gradle tasks. `build.gradle` and the Gradle wrapper are authoritative for configured versions and tasks.
+Current-state descriptions are observations of the `development` checkout reviewed on 2026-09-13. Target rules govern new work and focused migrations; they do not assert that existing code already conforms or authorize a repository-wide refactor.
 
 ## Current structure
 
@@ -108,54 +100,6 @@ Application services depend only on domain behavior and port contracts. They do 
 - Concrete logging/telemetry implementation and Spring runtime composition remain outside application and domain.
 - Adapters translate technical failures without embedding application policy or exposing provider details in public responses.
 
-## Reactive composition
-
-- Preserve non-blocking execution across WebFlux request paths.
-- Compose repository, security, and delivery effects into the returned `Mono` or `Flux` so completion and errors remain observable.
-- Do not call `block()` or initiate internal `subscribe()` calls in controllers, use cases, or domain logic.
-- Do not discard errors or detach correctness-critical work from the main pipeline.
-- Isolate unavoidable blocking provider APIs behind an infrastructure adapter and an explicit scheduler or asynchronous delivery boundary.
-- Keep domain rules deterministic and testable without Reactor when they do not perform I/O.
-
-## HTTP validation and error mapping
-
-- Interface DTO validation owns malformed transport input and syntactic constraints.
-- Application/domain code owns business invariants and state-transition rules.
-- Domain and application exceptions contain no HTTP status or response body decisions.
-- Interface advice translates those failures into the documented public contract.
-- Error schemas, cooldown responses, authentication responses, and other public behavior must stay consistent with frontend contracts and feature BDD specifications.
-
-## Persistence, transactions, and external integrations
-
-- Map explicitly between Mongo entities and core objects at the persistence adapter boundary.
-- Combine application checks with database indexes, unique constraints, optimistic concurrency, or conditional updates when correctness requires both.
-- Treat Mongo TTL cleanup as eventual retention behavior, not authorization or expiry enforcement.
-- Expose atomic work to application code through a transaction capability port rather than `TransactionalOperator`.
-- Keep Redis keys, SMTP messages, Twilio requests, JWT claims/cookies, and provider retry details inside their adapters.
-- Make external delivery observable without changing a generic public security response based on delivery outcome.
-
-## Security and privacy boundary
-
-- Never read, expose, print, copy, commit, or log environment secrets, private keys, certificates, passwords, password hashes, OTP values, code digests, JWTs, cookies, or MongoDB, Redis, mail, and Twilio credentials.
-- Inspect configuration names rather than values and redact sensitive output.
-- Do not log raw email addresses or other personal or financial data; use approved redaction or non-reversible correlation identifiers.
-- Use synthetic data in documentation, tests, fixtures, screenshots, and examples.
-- Keep credentials and provider authentication inside infrastructure adapters.
-- Keep browser authentication in backend-managed `HttpOnly`, `Secure`, and appropriately configured `SameSite` cookies.
-- For account discovery, registration, and recovery, public status, body, schema, cooldown behavior, and provider-delivery details must not reveal whether an account exists.
-- CORS with credentials requires explicit trusted origins; a wildcard origin is not valid for credentialed requests.
-- If a secret is discovered, report only its location and type and recommend rotation without repeating the value.
-
-## Testing placement
-
-- Test deterministic domain rules with fast unit tests under `src/test`.
-- Test application orchestration with mocked or fake outbound ports and Reactor Test where publishers are involved.
-- Test REST mapping, validation, status, schema, and advice with controller-focused tests whose application port is mocked.
-- Test adapter mapping, persistence constraints, concurrency, transactions, Redis behavior, and runtime wiring through adapter tests and `src/integrationTest`.
-- Run unit tests with `./gradlew test`.
-- Run Docker/Testcontainers integration tests separately with `./gradlew integrationTest`.
-- Add security-focused equivalence and leakage tests when a public flow can reveal account or credential state.
-
 ## Incremental migration policy
 
 - New code follows the target dependency contract.
@@ -164,26 +108,19 @@ Application services depend only on domain behavior and port contracts. They do 
 - Do not combine a feature change with repository-wide package cleanup.
 - Prefer a temporary mapper or adapter over allowing an HTTP, persistence, transaction, or provider type into the core.
 - Remove a temporary bridge only after all callers use the replacement port and focused plus relevant full tests pass.
-- Record valuable migration work in the workspace backlog; known gaps in this document are observations, not automatically assigned tasks.
+- Record proposed migration work in `.docs/` or an existing assigned work tracker; observed gaps are not automatically assigned tasks. Do not rely on a backlog route unless it exists in the checkout.
 
-## Known architectural gaps
+## Boundary debt
 
-These observations describe measured current-state gaps and do not expand target permissions:
+The following observed violations remain migration debt:
 
-- Ports under `domain.ports.inbound` and `domain.ports.outbound` expose Reactor types.
-- `AuthPort` accepts `ServerWebExchange`.
-- Security/JWT ports accept `ServerHttpResponse`.
-- Domain services use Spring `@Service` annotations.
-- `UserIdentity` exposes Spring Security `GrantedAuthority` types.
-- `AuthenticationService` imports the infrastructure-specific `AppLogger`.
-- `AuthenticationService` depends directly on Spring's `TransactionalOperator`.
-- Authentication delivery effects include internal `subscribe()` calls.
-- Application services are currently registered with Spring `@Service` and require incremental composition cleanup.
-- Some authentication log messages include complete submitted credentials and require a focused security hardening task.
+- Existing `domain.ports` expose Reactor and transport types; `AuthPort` accepts `ServerWebExchange`, and JWT ports expose `ServerHttpResponse`.
+- Domain services use Spring `@Service`; `UserIdentity` exposes Spring Security authority types.
+- Application services use Spring registration annotations; `AuthenticationService` imports infrastructure logging and Spring's `TransactionalOperator`.
+- Several interface/composition helpers are located differently from the target tree; location alone does not establish conformance.
 
-## Related documentation
+Runtime and security limitations are recorded in [SYSTEM_DESIGN.md](SYSTEM_DESIGN.md#current-limitations-and-open-decisions). Coding corrections follow [DEVELOPMENT.md](DEVELOPMENT.md); domain and application behavior must be characterized before moving boundaries.
 
-- [Backend repository guide](../AGENTS.md)
-- [Canonical backend guidance design](superpowers/specs/2026-08-05-backend-canonical-guidance-design.md)
-- [Secure-registration backend plan](superpowers/plans/2026-08-03-secure-registration-backend.md) — approved future behavior, not current implementation
-- [Secure-registration backend BDD](superpowers/specs/2026-08-03-secure-registration-backend-bdd.md) — approved future behavior, not current implementation
+## Changing this contract
+
+Update this guide when a deliberate task changes a boundary. Record rationale, affected consumers and migration evidence under `.docs/`, then reflect the accepted rule here. Feature-specific behavior belongs to its assigned specification and must not redefine dependency permissions. Missing historical plans are not a substitute for an explicit decision.
