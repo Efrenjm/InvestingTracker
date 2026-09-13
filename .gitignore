@@ -39,3 +39,7 @@ out/
 ### Miscellaneous ###
 .DS_Store
 .obsidian
+
+### Private files ###
+src/**/*.pem
+.env
