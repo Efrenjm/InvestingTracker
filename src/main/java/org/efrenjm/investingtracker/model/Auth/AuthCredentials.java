@@ -6,7 +6,6 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
@@ -18,9 +17,10 @@ import java.util.Set;
 @AllArgsConstructor
 @Setter
 @Getter
+@Builder
 @ToString
 @Document(collection = "auth")
-public class Auth implements UserDetails {
+public class AuthCredentials implements UserDetails {
     @Id
     @Field("_id")
     private String id;
@@ -35,13 +35,11 @@ public class Auth implements UserDetails {
     private boolean active = true;
     private Set<GrantedAuthority> roles = new HashSet<GrantedAuthority>();
 
-    @Builder
-    public Auth(String email, String phoneNumber, String password) {
-        this.email = email;
-        this.phoneNumber = phoneNumber;
-        this.password = password;
-        roles.add(new SimpleGrantedAuthority("ROLE_USER"));
-    }
+    private Profile profile;
+
+    private boolean active = true;
+
+    private Set<GrantedAuthority> roles = new HashSet<GrantedAuthority>();
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

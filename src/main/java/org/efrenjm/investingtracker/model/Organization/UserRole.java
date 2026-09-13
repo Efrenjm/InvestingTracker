@@ -1,7 +1,7 @@
 package org.efrenjm.investingtracker.model.Organization;
 
 import lombok.*;
-import org.efrenjm.investingtracker.model.Profile.PublicProfile;
+import org.efrenjm.investingtracker.model.Profile.Profile;
 import org.efrenjm.investingtracker.model.Role.Role;
 
 @NoArgsConstructor
@@ -10,7 +10,7 @@ import org.efrenjm.investingtracker.model.Role.Role;
 @Setter
 @ToString
 public class UserRole {
-    private PublicProfile user;
+    private Profile user;
 
     private Role role;
 }
