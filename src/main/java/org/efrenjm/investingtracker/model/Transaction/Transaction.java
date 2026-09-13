@@ -4,6 +4,7 @@ import lombok.*;
 import org.efrenjm.investingtracker.model.Account.Account;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
@@ -16,15 +17,33 @@ import java.util.List;
 @ToString
 @Document(collection = "transactions")
 public class Transaction {
-    @Id private String id;
+    @Id
+    @Field("_id")
+    private String id;
+
     private String name;
+
     private String description;
+
     private String type;
+
+    @Field("from_accounts")
     private List<Account> fromAccounts;
+
+    @Field("to_accounts")
     private List<Account> toAccounts;
+
+    @Field("total_amount")
     private Double totalAmount;
+
     private List<String> categories;
+
+    @Field("transaction_date")
     private LocalDate transactionDate;
-    private ZonedDateTime created_at;
-    private ZonedDateTime updated_at;
+
+    @Field("created_at")
+    private ZonedDateTime createdAt;
+
+    @Field("updated_at")
+    private ZonedDateTime updatedAt;
 }

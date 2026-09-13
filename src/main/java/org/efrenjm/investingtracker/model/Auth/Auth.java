@@ -1,8 +1,10 @@
 package org.efrenjm.investingtracker.model.Auth;
 
 import lombok.*;
+import org.efrenjm.investingtracker.model.Profile.Profile;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -20,9 +22,16 @@ import java.util.Set;
 @Document(collection = "auth")
 public class Auth implements UserDetails {
     @Id
+    @Field("_id")
     private String id;
     private String username;
+    private String email;
+
+    @Field("phone_number")
+    private String phoneNumber;
+
     private String password;
+    private Profile profile;
     private boolean active = true;
     private Set<GrantedAuthority> roles = new HashSet<GrantedAuthority>();
 
