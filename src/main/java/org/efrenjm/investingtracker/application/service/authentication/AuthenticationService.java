@@ -94,7 +94,7 @@ public class AuthenticationService implements AuthPort
 	}
 
 	@Override
-	public Mono<User> register(String username)
+	public Mono<User> register(String username, String password)
 	{
 		AppLogger.info(log, "AUTH-030", "register", "Registration attempt for: " + username);
 
@@ -120,17 +120,24 @@ public class AuthenticationService implements AuthPort
 						AppLogger.warn(log, "AUTH-032", "register", "Registration failed: active user already exists for " + username);
 						return Mono.<User>error(new UserAlreadyExistsException());
 					}
-					return handleUnverifiedUserRegistration(existingUser, username);
+					return prepareProvisionalPassword(existingUser, password)
+							.flatMap(user -> handleUnverifiedUserRegistration(user, username));
 				})
 				.switchIfEmpty(Mono.defer(() -> {
 					User newUser = userDomainService.createUser(username);
-					return userRepository.save(newUser)
+					return prepareProvisionalPassword(newUser, password)
+							.flatMap(userRepository::save)
 							.doOnSuccess(saved -> {
 								AppLogger.success(log, "AUTH-033", "register", "User registered successfully with userId: " + saved.getId());
 								this.sendVerificationRequest(saved);
 							})
 							.doOnError(e -> AppLogger.fail(log, "AUTH-034", "register", "Failed to save registered user for " + username, e));
 				}));
+	}
+
+	private Mono<User> prepareProvisionalPassword(User user, String password)
+	{
+		return Mono.just(userDomainService.resetUnverifiedPassword(user, password));
 	}
 
 	private Mono<User> handleUnverifiedUserRegistration(User existingUser, String credential)
@@ -363,4 +370,3 @@ public class AuthenticationService implements AuthPort
 				.thenReturn(user);
 	}
 }
-

@@ -58,8 +58,8 @@ class AuthenticationControllerIT extends IntegrationTestBase {
                 .uri(BASE + "/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue("""
-                        {"username": "%s", "password": "%s"}
-                        """.formatted(email, PASSWORD))
+                        {"username": "%s", "password": "%s", "confirmPassword": "%s"}
+                        """.formatted(email, PASSWORD, PASSWORD))
                 .exchange()
                 .expectStatus().isCreated()
                 .expectBody()
@@ -79,8 +79,8 @@ class AuthenticationControllerIT extends IntegrationTestBase {
                 .uri(BASE + "/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue("""
-                        {"username": "%s", "password": "%s"}
-                        """.formatted(email, PASSWORD))
+                        {"username": "%s", "password": "%s", "confirmPassword": "%s"}
+                        """.formatted(email, PASSWORD, PASSWORD))
                 .exchange()
                 .expectStatus().is4xxClientError();
     }
@@ -92,7 +92,7 @@ class AuthenticationControllerIT extends IntegrationTestBase {
                 .uri(BASE + "/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue("""
-                        {"username": "%s", "password": "weak"}
+                        {"username": "%s", "password": "weak", "confirmPassword": "weak"}
                         """.formatted(uniqueEmail()))
                 .exchange()
                 .expectStatus().isBadRequest();
@@ -103,7 +103,7 @@ class AuthenticationControllerIT extends IntegrationTestBase {
     // -------------------------------------------------------------------------
 
     @Test
-    @DisplayName("verify-code - valid code activates account and returns 200")
+    @DisplayName("verify-code - valid code activates account without creating a session")
     void verifyCode_ValidCode_Returns200() throws Exception {
         String email = uniqueEmail();
         // 1. Register
@@ -121,7 +121,8 @@ class AuthenticationControllerIT extends IntegrationTestBase {
                         {"userId": "%s", "code": "%s"}
                         """.formatted(userId, code))
                 .exchange()
-                .expectStatus().isOk()
+                .expectStatus().isCreated()
+                .expectHeader().doesNotExist("Set-Cookie")
                 .expectBody()
                 .jsonPath("$.userId").isEqualTo(userId);
     }
@@ -384,8 +385,8 @@ class AuthenticationControllerIT extends IntegrationTestBase {
                 .uri(BASE + "/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue("""
-                        {"username": "%s", "password": "%s"}
-                        """.formatted(email, PASSWORD))
+                        {"username": "%s", "password": "%s", "confirmPassword": "%s"}
+                        """.formatted(email, PASSWORD, PASSWORD))
                 .exchange()
                 .expectStatus().isCreated()
                 .expectBody()
@@ -435,8 +436,8 @@ class AuthenticationControllerIT extends IntegrationTestBase {
                     .uri(BASE + "/register")
                     .contentType(MediaType.APPLICATION_JSON)
                     .bodyValue("""
-                            {"username": "%s", "password": "%s"}
-                            """.formatted(email, PASSWORD))
+                            {"username": "%s", "password": "%s", "confirmPassword": "%s"}
+                            """.formatted(email, PASSWORD, PASSWORD))
                     .exchange()
                     .expectStatus().isCreated()
                     .expectBody()
@@ -463,5 +464,3 @@ class AuthenticationControllerIT extends IntegrationTestBase {
         }
     }
 }
-
-

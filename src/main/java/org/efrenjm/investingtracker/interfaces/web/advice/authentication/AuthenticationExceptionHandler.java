@@ -11,50 +11,58 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.efrenjm.investingtracker.interfaces.web.advice.problem.ApiProblem;
+import org.efrenjm.investingtracker.interfaces.web.advice.problem.ApiProblemFactory;
 
 @Slf4j
 @RestControllerAdvice(assignableTypes = { AuthenticationController.class})
 @Order(1)
 public class AuthenticationExceptionHandler {
+	private final ApiProblemFactory problemFactory;
+
+	public AuthenticationExceptionHandler(ApiProblemFactory problemFactory) {
+		this.problemFactory = problemFactory;
+	}
+
 	@ExceptionHandler(InvalidCredentialsException.class)
-	public ResponseEntity<String> handleInvalidCredentials(InvalidCredentialsException ex) {
+	public ResponseEntity<ApiProblem> handleInvalidCredentials(InvalidCredentialsException ex) {
 		AppLogger.warn(log, "AUTH-EX-001", "handleInvalidCredentials", ex.getMessage());
-		return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ex.getMessage());
+		return problemFactory.create(HttpStatus.UNAUTHORIZED, "INVALID_CREDENTIALS", "Authentication failed", ex.getMessage());
 	}
 
 	@ExceptionHandler(UserAlreadyExistsException.class)
-	public ResponseEntity<String> handleUserAlreadyExistsException(UserAlreadyExistsException ex) {
+	public ResponseEntity<ApiProblem> handleUserAlreadyExistsException(UserAlreadyExistsException ex) {
 		AppLogger.warn(log, "AUTH-EX-002", "handleUserAlreadyExistsException", ex.getMessage());
-		return ResponseEntity.status(HttpStatus.CONFLICT).body(ex.getMessage());
+		return problemFactory.create(HttpStatus.CONFLICT, "USER_ALREADY_EXISTS", "Registration unavailable", ex.getMessage());
 	}
 
 	@ExceptionHandler(MissingCredentialsException.class)
-	public ResponseEntity<String> handleMissingCredentials(MissingCredentialsException ex) {
+	public ResponseEntity<ApiProblem> handleMissingCredentials(MissingCredentialsException ex) {
 		AppLogger.warn(log, "AUTH-EX-003", "handleMissingCredentials", ex.getMessage());
-		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
+		return problemFactory.create(HttpStatus.BAD_REQUEST, "MISSING_CREDENTIALS", "Invalid authentication request", ex.getMessage());
 	}
 
 	@ExceptionHandler(DefaultRegistrationException.class)
-	public ResponseEntity<String> handleUserRegistration(DefaultRegistrationException ex) {
+	public ResponseEntity<ApiProblem> handleUserRegistration(DefaultRegistrationException ex) {
 		AppLogger.warn(log, "AUTH-EX-004", "handleUserRegistration", ex.getMessage());
-		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
+		return problemFactory.create(HttpStatus.BAD_REQUEST, "REGISTRATION_FAILED", "Registration failed", ex.getMessage());
 	}
 
 	@ExceptionHandler(AccountAlreadyVerifiedException.class)
-	public ResponseEntity<String> handleAccountAlreadyVerified(AccountAlreadyVerifiedException ex) {
+	public ResponseEntity<ApiProblem> handleAccountAlreadyVerified(AccountAlreadyVerifiedException ex) {
 		AppLogger.warn(log, "AUTH-EX-005", "handleAccountAlreadyVerified", ex.getMessage());
-		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
+		return problemFactory.create(HttpStatus.BAD_REQUEST, "ACCOUNT_ALREADY_VERIFIED", "Account already verified", ex.getMessage());
 	}
 
 	@ExceptionHandler(InvalidCodeException.class)
-	public ResponseEntity<String> handleInvalidToken(InvalidCodeException ex) {
+	public ResponseEntity<ApiProblem> handleInvalidToken(InvalidCodeException ex) {
 		AppLogger.warn(log, "AUTH-EX-006", "handleInvalidToken", ex.getMessage());
-		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
+		return problemFactory.create(HttpStatus.BAD_REQUEST, "INVALID_CODE", "Verification failed", ex.getMessage());
 	}
 
 	@ExceptionHandler(CodeExpiredException.class)
-	public ResponseEntity<String> handleTokenExpired(CodeExpiredException ex) {
+	public ResponseEntity<ApiProblem> handleTokenExpired(CodeExpiredException ex) {
 		AppLogger.warn(log, "AUTH-EX-007", "handleTokenExpired", ex.getMessage());
-		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
+		return problemFactory.create(HttpStatus.BAD_REQUEST, "CODE_EXPIRED", "Verification failed", ex.getMessage());
 	}
 }

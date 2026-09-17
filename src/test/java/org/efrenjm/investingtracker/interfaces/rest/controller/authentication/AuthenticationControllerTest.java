@@ -61,6 +61,8 @@ class AuthenticationControllerTest {
 	@Test
 	void register_ValidData_ReturnsCreated() {
 		RegisterRequestDTO request = new RegisterRequestDTO("user@example.com");
+		request.setPassword("Password1@");
+		request.setConfirmPassword("Password1@");
 
 		String userId = new ObjectId().toString();
 
@@ -77,7 +79,7 @@ class AuthenticationControllerTest {
 				.verificationRequest(verificationRequest)
 				.build();
 
-		when(authService.register(request.getUsername()))
+		when(authService.register(request.getUsername(), request.getPassword()))
 				.thenReturn(Mono.just(user));
 
 		Mono<ResponseEntity<RegisterResponseDTO>> result = controller.register(request);
@@ -100,11 +102,12 @@ class AuthenticationControllerTest {
 		when(authService.refreshVerificationCode(user))
 				.thenReturn(Mono.just(user));
 
-		Mono<ResponseEntity<String>> result = controller.refreshVerificationCode(null, user);
+		Mono<ResponseEntity<VerificationCodeResponseDTO>> result = controller.refreshVerificationCode(null, user);
 
 		StepVerifier.create(result)
 				.assertNext(response -> {
 					assertEquals(200, response.getStatusCode().value());
+					assertEquals("VERIFICATION_CODE_SENT", response.getBody().code());
 				})
 				.verifyComplete();
 	}
@@ -119,18 +122,19 @@ class AuthenticationControllerTest {
 		when(authService.refreshVerificationCode(userId))
 				.thenReturn(Mono.just(user));
 
-		Mono<ResponseEntity<String>> result = controller.refreshVerificationCode(userId, null);
+		Mono<ResponseEntity<VerificationCodeResponseDTO>> result = controller.refreshVerificationCode(userId, null);
 
 		StepVerifier.create(result)
 				.assertNext(response -> {
 					assertEquals(200, response.getStatusCode().value());
+					assertEquals("VERIFICATION_CODE_SENT", response.getBody().code());
 				})
 				.verifyComplete();
 	}
 
 	@Test
 	void refreshVerificationCode_UnauthenticatedWithoutUserId_ThrowsException() {
-		Mono<ResponseEntity<String>> result = controller.refreshVerificationCode(null, null);
+		Mono<ResponseEntity<VerificationCodeResponseDTO>> result = controller.refreshVerificationCode(null, null);
 
 		StepVerifier.create(result)
 				.expectError(NoUserProvidedException.class)

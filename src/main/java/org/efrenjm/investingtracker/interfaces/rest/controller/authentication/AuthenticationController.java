@@ -45,8 +45,8 @@ public class AuthenticationController
 							@Header(name = "Set-Cookie", description = "HTTP-only cookie named jwt containing the access token")
 					}
 			),
-			@ApiResponse(responseCode = "400", description = "Invalid request body", content = @Content(mediaType = "text/plain")),
-			@ApiResponse(responseCode = "401", description = "Invalid credentials", content = @Content(mediaType = "text/plain"))
+			@ApiResponse(responseCode = "400", description = "Invalid request body", content = @Content(mediaType = "application/problem+json")),
+			@ApiResponse(responseCode = "401", description = "Invalid credentials", content = @Content(mediaType = "application/problem+json"))
 	})
 	@io.swagger.v3.oas.annotations.parameters.RequestBody(
 			required = true,
@@ -74,7 +74,7 @@ public class AuthenticationController
 	)
 	@ApiResponses({
 			@ApiResponse(responseCode = "204", description = "Logout successful; JWT cookie removed"),
-			@ApiResponse(responseCode = "401", description = "Authentication required", content = @Content(mediaType = "text/plain"))
+			@ApiResponse(responseCode = "401", description = "Authentication required", content = @Content(mediaType = "application/problem+json"))
 	})
 	@PostMapping("/logout")
 	public Mono<ResponseEntity<Void>> logout(@Parameter(hidden = true) @AuthUser UserIdentity user,
@@ -94,8 +94,8 @@ public class AuthenticationController
 					description = "User registered",
 					content = @Content(mediaType = "application/json", schema = @Schema(implementation = RegisterResponseDTO.class))
 			),
-			@ApiResponse(responseCode = "400", description = "Validation error", content = @Content(mediaType = "text/plain")),
-			@ApiResponse(responseCode = "409", description = "User already exists", content = @Content(mediaType = "text/plain"))
+			@ApiResponse(responseCode = "400", description = "Validation error", content = @Content(mediaType = "application/problem+json")),
+			@ApiResponse(responseCode = "409", description = "User already exists", content = @Content(mediaType = "application/problem+json"))
 	})
 	@io.swagger.v3.oas.annotations.parameters.RequestBody(
 			required = true,
@@ -103,13 +103,13 @@ public class AuthenticationController
 			content = @Content(
 					mediaType = "application/json",
 					schema = @Schema(implementation = RegisterRequestDTO.class),
-					examples = @ExampleObject(value = "{\"username\":\"john.doe@email.com\"}")
+				examples = @ExampleObject(value = "{\"username\":\"john.doe@email.com\",\"password\":\"Str0ngP@ss!\",\"confirmPassword\":\"Str0ngP@ss!\"}")
 			)
 	)
 	@PostMapping("/register")
 	public Mono<ResponseEntity<RegisterResponseDTO>> register(@Valid @RequestBody RegisterRequestDTO req)
 	{
-		return authenticationService.register(req.getUsername())
+		return authenticationService.register(req.getUsername(), req.getPassword())
 				.map(user -> ResponseEntity.created(URI.create("/verify-code"))
 						.body(RegisterResponseDTO.from(user)));
 	}
@@ -119,12 +119,12 @@ public class AuthenticationController
 			description = "Generates and sends a new verification code. If the caller is authenticated, userId is optional. If the caller is anonymous, userId is required."
 	)
 	@ApiResponses({
-			@ApiResponse(responseCode = "200", description = "Verification code refreshed"),
-			@ApiResponse(responseCode = "400", description = "Missing user information or refresh is temporarily disabled", content = @Content(mediaType = "text/plain")),
-			@ApiResponse(responseCode = "404", description = "User not found", content = @Content(mediaType = "text/plain"))
+			@ApiResponse(responseCode = "200", description = "Verification code refreshed", content = @Content(mediaType = "application/json", schema = @Schema(implementation = VerificationCodeResponseDTO.class))),
+			@ApiResponse(responseCode = "400", description = "Missing user information or refresh is temporarily disabled", content = @Content(mediaType = "application/problem+json")),
+			@ApiResponse(responseCode = "404", description = "User not found", content = @Content(mediaType = "application/problem+json"))
 	})
 	@GetMapping("/refresh-code")
-	public Mono<ResponseEntity<String>> refreshVerificationCode(
+	public Mono<ResponseEntity<VerificationCodeResponseDTO>> refreshVerificationCode(
 			@Parameter(description = "User identifier for anonymous calls. Omit when authenticated.", example = "67d2f18d8b17c24e3fe46ed1")
 			@RequestParam(required = false) String userId,
 			@Parameter(hidden = true) @AuthUser User user)
@@ -142,25 +142,25 @@ public class AuthenticationController
 				{
 					strategy = authenticationService.refreshVerificationCode(user);
 				}
-				return strategy.map(res -> ResponseEntity.ok().build());
+				return strategy.map(res -> ResponseEntity.ok(new VerificationCodeResponseDTO("VERIFICATION_CODE_SENT")));
 	}
 
 	@Operation(
 			summary = "Verify one-time code",
-			description = "Validates a one-time code and completes the pending verification flow. Redirects to /password for password setup."
+			description = "Validates a one-time code, activates the pending account."
 	)
 	@ApiResponses({
 			@ApiResponse(
-					responseCode = "200",
-					description = "Code verified successfully; Location header points to /password",
+				responseCode = "201",
+					description = "Code verified successfully.",
 					headers = {
-							@Header(name = "Location", description = "URL for setting account password after verification")
+						@Header(name = "Location", description = "URL for login after verification")
 					},
 					content = @Content(mediaType = "application/json", schema = @Schema(implementation = VerifyCodeResponseDTO.class))
 			),
-			@ApiResponse(responseCode = "400", description = "Invalid or expired code, or bad request payload", content = @Content(mediaType = "text/plain")),
-			@ApiResponse(responseCode = "404", description = "User not found", content = @Content(mediaType = "text/plain")),
-			@ApiResponse(responseCode = "409", description = "Account already verified or conflicting state", content = @Content(mediaType = "text/plain"))
+			@ApiResponse(responseCode = "400", description = "Invalid or expired code, or bad request payload", content = @Content(mediaType = "application/problem+json")),
+			@ApiResponse(responseCode = "404", description = "User not found", content = @Content(mediaType = "application/problem+json")),
+			@ApiResponse(responseCode = "409", description = "Account already verified or conflicting state", content = @Content(mediaType = "application/problem+json"))
 	})
 	@io.swagger.v3.oas.annotations.parameters.RequestBody(
 			required = true,

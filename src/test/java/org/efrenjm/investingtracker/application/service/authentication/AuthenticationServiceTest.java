@@ -86,6 +86,8 @@ class AuthenticationServiceTest {
 	void setUp() {
 		lenient().when(exchange.getResponse()).thenReturn(response);
 		lenient().when(transactionalOperator.transactional(any(Mono.class))).thenAnswer(i -> i.getArgument(0));
+		lenient().when(userDomainService.resetUnverifiedPassword(any(User.class), anyString()))
+				.thenAnswer(invocation -> invocation.getArgument(0));
 	}
 
 	@Test
@@ -231,7 +233,7 @@ class AuthenticationServiceTest {
 			return Mono.just(savedUser);
 		});
 
-		StepVerifier.create(authService.register(email))
+		StepVerifier.create(authService.register(email, password))
 				.assertNext(user -> {
 					assert user.getPassword().equals(encodedPassword);
 					assert !user.isActive();
@@ -245,12 +247,46 @@ class AuthenticationServiceTest {
 	}
 
 	@Test
+	void register_WithPassword_StoresEncodedPasswordBeforeSendingVerification() {
+		String email = "new-user@example.com";
+		String password = "Password1@";
+		String encodedPassword = "encoded-password";
+		User provisionalUser = User.builder()
+				.active(false)
+				.verificationRequest(VerificationRequest.builder()
+						.code("ABC123")
+						.codeUsage(CodeUsage.EMAIL_VERIFICATION)
+						.credential(email)
+						.expiration(new Date(System.currentTimeMillis() + 600_000))
+						.refreshPause(new Date(System.currentTimeMillis() + 60_000))
+						.build())
+				.build();
+
+		when(validationService.isValidEmail(email)).thenReturn(true);
+		when(userRepository.findEmailInUse(email)).thenReturn(Mono.empty());
+		when(userDomainService.createUser(email)).thenReturn(provisionalUser);
+		when(userDomainService.resetUnverifiedPassword(provisionalUser, password)).thenAnswer(invocation -> {
+			provisionalUser.setPassword(encodedPassword);
+			return provisionalUser;
+		});
+		when(userRepository.save(provisionalUser)).thenReturn(Mono.just(provisionalUser));
+		when(emailService.sendVerificationEmail(email, "ABC123")).thenReturn(Mono.empty());
+
+		StepVerifier.create(authService.register(email, password))
+				.assertNext(user -> assertEquals(encodedPassword, user.getPassword()))
+				.verifyComplete();
+
+		verify(userDomainService).resetUnverifiedPassword(provisionalUser, password);
+		verify(emailService).sendVerificationEmail(email, "ABC123");
+	}
+
+	@Test
 	void register_InvalidCredential_ThrowsException() {
 		String username = "not-an-email-or-phone";
 		when(validationService.isValidEmail(username)).thenReturn(false);
 		when(validationService.isValidPhone(username)).thenReturn(false);
 
-		StepVerifier.create(authService.register(username))
+		StepVerifier.create(authService.register(username, "Password1@"))
 				.expectError(InvalidUsernameException.class)
 				.verify();
 	}
@@ -263,7 +299,7 @@ class AuthenticationServiceTest {
 		when(validationService.isValidEmail(email)).thenReturn(true);
 		when(userRepository.findEmailInUse(email)).thenReturn(Mono.just(existing));
 
-		StepVerifier.create(authService.register(email))
+		StepVerifier.create(authService.register(email, "Password1@"))
 				.expectError(UserAlreadyExistsException.class)
 				.verify();
 	}
@@ -286,7 +322,7 @@ class AuthenticationServiceTest {
 		when(userRepository.save(any(User.class))).thenAnswer(inv -> Mono.just(inv.getArgument(0)));
 		when(emailService.sendVerificationEmail(anyString(), anyString())).thenReturn(Mono.empty());
 
-		StepVerifier.create(authService.register(email))
+		StepVerifier.create(authService.register(email, "Password1@"))
 				.assertNext(user -> assertTrue(user.getVerificationRequest().isPresent()))
 				.verifyComplete();
 
@@ -314,7 +350,7 @@ class AuthenticationServiceTest {
 		when(userRepository.findEmailInUse(email)).thenReturn(Mono.just(existing));
 		when(userRepository.save(any(User.class))).thenAnswer(inv -> Mono.just(inv.getArgument(0)));
 
-		StepVerifier.create(authService.register(email))
+		StepVerifier.create(authService.register(email, "Password1@"))
 				.assertNext(user -> assertTrue(user.getVerificationRequest().isPresent()))
 				.verifyComplete();
 
@@ -343,7 +379,7 @@ class AuthenticationServiceTest {
 		when(userRepository.save(any(User.class))).thenAnswer(inv -> Mono.just(inv.getArgument(0)));
 		when(messageService.sendVerificationMessage(anyString(), anyString())).thenReturn(Mono.empty());
 
-		StepVerifier.create(authService.register(phone))
+		StepVerifier.create(authService.register(phone, "Password1@"))
 				.assertNext(user -> assertTrue(user.getVerificationRequest().isPresent()))
 				.verifyComplete();
 
