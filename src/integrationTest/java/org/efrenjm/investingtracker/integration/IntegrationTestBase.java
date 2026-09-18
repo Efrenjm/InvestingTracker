@@ -1,9 +1,11 @@
 package org.efrenjm.investingtracker.integration;
 
 import com.redis.testcontainers.RedisContainer;
+import org.efrenjm.investingtracker.domain.ports.outbound.utils.SmsPort;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
 import org.springframework.data.redis.connection.ReactiveRedisConnectionFactory;
 import org.springframework.test.context.DynamicPropertyRegistry;
@@ -29,6 +31,14 @@ import java.time.Duration;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Testcontainers
 public abstract class IntegrationTestBase {
+
+    /**
+     * Twilio is not part of the integration-test scope. Replacing the provider
+     * adapter keeps the application context independent from Twilio credentials
+     * while preserving the application-level SMS port.
+     */
+    @MockBean
+    private SmsPort smsPort;
 
     @Container
     static final MongoDBContainer mongoDBContainer =
@@ -90,8 +100,12 @@ public abstract class IntegrationTestBase {
         // Mail (Mailpit SMTP)
         registry.add("spring.mail.host", mailpitContainer::getHost);
         registry.add("spring.mail.port", () -> mailpitContainer.getMappedPort(1025));
-        registry.add("spring.mail.username", () -> "");
+        registry.add("spring.mail.username", () -> "integration-test@example.com");
         registry.add("spring.mail.password", () -> "");
+
+        // CORS is covered by its own configuration tests; integration requests are same-origin.
+        registry.add("app.security.cors.enabled", () -> "false");
+        registry.add("app.security.cors.allowed-origins[0]", () -> "http://localhost");
     }
 
     /**
@@ -101,4 +115,3 @@ public abstract class IntegrationTestBase {
         return "http://" + mailpitContainer.getHost() + ":" + mailpitContainer.getMappedPort(8025);
     }
 }
-

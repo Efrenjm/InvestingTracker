@@ -1,5 +1,6 @@
 package org.efrenjm.investingtracker.application.service.authentication;
 
+import org.bson.types.ObjectId;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.efrenjm.investingtracker.application.service.authentication.exceptions.*;
@@ -117,8 +118,8 @@ public class AuthenticationService implements AuthPort
 				.flatMap(existingUser -> {
 					if (!existingUser.isNewUser() || existingUser.isActive())
 					{
-						AppLogger.warn(log, "AUTH-032", "register", "Registration failed: active user already exists for " + username);
-						return Mono.<User>error(new UserAlreadyExistsException());
+						AppLogger.warn(log, "AUTH-032", "register", "Registration conflict detected: credential is already associated with an account");
+						return Mono.just(createGenericRegistrationContext(username));
 					}
 					return prepareProvisionalPassword(existingUser, password)
 							.flatMap(user -> handleUnverifiedUserRegistration(user, username));
@@ -133,6 +134,21 @@ public class AuthenticationService implements AuthPort
 							})
 							.doOnError(e -> AppLogger.fail(log, "AUTH-034", "register", "Failed to save registered user for " + username, e));
 				}));
+	}
+
+	private User createGenericRegistrationContext(String username)
+	{
+		CodeUsage codeUsage = validationService.isValidEmail(username)
+				? CodeUsage.EMAIL_VERIFICATION
+				: CodeUsage.PHONE_VERIFICATION;
+
+		return User.builder()
+				.id(new ObjectId().toString())
+				.verificationRequest(VerificationRequest.builder()
+						.codeUsage(codeUsage)
+						.credential(username)
+						.build())
+				.build();
 	}
 
 	private Mono<User> prepareProvisionalPassword(User user, String password)

@@ -86,7 +86,7 @@ public class AuthenticationController
 
 	@Operation(
 			summary = "Register a new user",
-			description = "Creates a user account and returns verification context."
+			description = "Accepts a registration request and returns a generic verification context."
 	)
 	@ApiResponses({
 			@ApiResponse(
@@ -94,8 +94,7 @@ public class AuthenticationController
 					description = "User registered",
 					content = @Content(mediaType = "application/json", schema = @Schema(implementation = RegisterResponseDTO.class))
 			),
-			@ApiResponse(responseCode = "400", description = "Validation error", content = @Content(mediaType = "application/problem+json")),
-			@ApiResponse(responseCode = "409", description = "User already exists", content = @Content(mediaType = "application/problem+json"))
+			@ApiResponse(responseCode = "400", description = "Validation error", content = @Content(mediaType = "application/problem+json"))
 	})
 	@io.swagger.v3.oas.annotations.parameters.RequestBody(
 			required = true,

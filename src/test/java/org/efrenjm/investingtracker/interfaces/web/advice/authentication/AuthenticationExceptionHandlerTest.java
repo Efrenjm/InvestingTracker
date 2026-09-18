@@ -33,5 +33,6 @@ class AuthenticationExceptionHandlerTest {
         assertEquals(MediaType.APPLICATION_PROBLEM_JSON, response.getHeaders().getContentType());
         assertNotNull(response.getBody());
         assertEquals("USER_ALREADY_EXISTS", response.getBody().code());
+        assertEquals("You’re almost there! Check your inbox for the next steps.", response.getBody().detail());
     }
 }

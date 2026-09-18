@@ -292,7 +292,7 @@ class AuthenticationServiceTest {
 	}
 
 	@Test
-	void register_WhenActiveUserExists_ThrowsUserAlreadyExists() {
+	void register_WhenActiveUserExists_ReturnsGenericRegistrationContext() {
 		String email = "user@example.com";
 		User existing = User.builder().id("u1").email(email).active(true).build();
 
@@ -300,8 +300,15 @@ class AuthenticationServiceTest {
 		when(userRepository.findEmailInUse(email)).thenReturn(Mono.just(existing));
 
 		StepVerifier.create(authService.register(email, "Password1@"))
-				.expectError(UserAlreadyExistsException.class)
-				.verify();
+				.assertNext(user -> {
+					assertNotNull(user.getId());
+					assertNotEquals(existing.getId(), user.getId());
+					assertEquals(email, user.getVerificationRequest().orElseThrow().getCredential());
+				})
+				.verifyComplete();
+
+		verify(userRepository, never()).save(any(User.class));
+		verifyNoInteractions(emailService);
 	}
 
 	@Test

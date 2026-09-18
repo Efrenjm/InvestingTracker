@@ -89,6 +89,7 @@ class AuthenticationControllerTest {
 					assertEquals(201, response.getStatusCode().value());
 					assertEquals(URI.create("/verify-code"), response.getHeaders().getLocation());
 					assertEquals(userId, response.getBody().userId());
+					assertEquals("You’re almost there! Check your inbox for the next steps.", response.getBody().message());
 				})
 				.verifyComplete();
 	}

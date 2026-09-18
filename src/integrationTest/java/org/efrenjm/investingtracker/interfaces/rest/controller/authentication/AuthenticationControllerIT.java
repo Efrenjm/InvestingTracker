@@ -68,8 +68,8 @@ class AuthenticationControllerIT extends IntegrationTestBase {
     }
 
     @Test
-    @DisplayName("register - active duplicate email returns 409")
-    void register_DuplicateEmail_Returns409() {
+    @DisplayName("register - active duplicate email returns generic success")
+    void register_DuplicateEmail_ReturnsGenericSuccess() {
         String email = uniqueEmail();
         // First time: register and verify
         registerAndVerify(email);
@@ -82,7 +82,9 @@ class AuthenticationControllerIT extends IntegrationTestBase {
                         {"username": "%s", "password": "%s", "confirmPassword": "%s"}
                         """.formatted(email, PASSWORD, PASSWORD))
                 .exchange()
-                .expectStatus().is4xxClientError();
+                .expectStatus().isCreated()
+                .expectBody()
+                .jsonPath("$.message").isEqualTo("You’re almost there! Check your inbox for the next steps.");
     }
 
     @Test
@@ -269,9 +271,49 @@ class AuthenticationControllerIT extends IntegrationTestBase {
 
         webTestClient.get()
                 .uri("/user")
-                .cookie("jwt", clearedCookie.getValue())
+                .cookie("jwt", jwtCookie.getValue())
                 .exchange()
                 .expectStatus().isUnauthorized();
+    }
+
+    @Test
+    @DisplayName("logout - revoking one session does not revoke another session")
+    void logout_OneSessionDoesNotRevokeAnotherSession() {
+        String email = uniqueEmail();
+        registerAndVerify(email);
+
+        ResponseCookie firstSession = loginAndGetJwtCookie(email);
+        ResponseCookie secondSession = loginAndGetJwtCookie(email);
+
+        webTestClient.get()
+                .uri("/user")
+                .cookie("jwt", firstSession.getValue())
+                .exchange()
+                .expectStatus().isOk();
+
+        webTestClient.get()
+                .uri("/user")
+                .cookie("jwt", secondSession.getValue())
+                .exchange()
+                .expectStatus().isOk();
+
+        webTestClient.post()
+                .uri(BASE + "/logout")
+                .cookie("jwt", firstSession.getValue())
+                .exchange()
+                .expectStatus().isNoContent();
+
+        webTestClient.get()
+                .uri("/user")
+                .cookie("jwt", firstSession.getValue())
+                .exchange()
+                .expectStatus().isUnauthorized();
+
+        webTestClient.get()
+                .uri("/user")
+                .cookie("jwt", secondSession.getValue())
+                .exchange()
+                .expectStatus().isOk();
     }
 
     // -------------------------------------------------------------------------
@@ -300,7 +342,7 @@ class AuthenticationControllerIT extends IntegrationTestBase {
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody()
-                .jsonPath("$.email").isEqualTo(email);
+                .jsonPath("$.user.email").isEqualTo(email);
     }
 
     @Test
@@ -456,7 +498,7 @@ class AuthenticationControllerIT extends IntegrationTestBase {
                             {"userId": "%s", "code": "%s"}
                             """.formatted(userId[0], code))
                     .exchange()
-                    .expectStatus().isOk();
+                    .expectStatus().isCreated();
 
             return userId[0];
         } catch (Exception e) {

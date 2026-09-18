@@ -18,6 +18,9 @@ import org.efrenjm.investingtracker.interfaces.web.advice.problem.ApiProblemFact
 @RestControllerAdvice(assignableTypes = { AuthenticationController.class})
 @Order(1)
 public class AuthenticationExceptionHandler {
+	private static final String GENERIC_REGISTRATION_MESSAGE =
+			"You’re almost there! Check your inbox for the next steps.";
+
 	private final ApiProblemFactory problemFactory;
 
 	public AuthenticationExceptionHandler(ApiProblemFactory problemFactory) {
@@ -33,7 +36,7 @@ public class AuthenticationExceptionHandler {
 	@ExceptionHandler(UserAlreadyExistsException.class)
 	public ResponseEntity<ApiProblem> handleUserAlreadyExistsException(UserAlreadyExistsException ex) {
 		AppLogger.warn(log, "AUTH-EX-002", "handleUserAlreadyExistsException", ex.getMessage());
-		return problemFactory.create(HttpStatus.CONFLICT, "USER_ALREADY_EXISTS", "Registration unavailable", ex.getMessage());
+		return problemFactory.create(HttpStatus.CONFLICT, "USER_ALREADY_EXISTS", "Registration unavailable", GENERIC_REGISTRATION_MESSAGE);
 	}
 
 	@ExceptionHandler(MissingCredentialsException.class)
