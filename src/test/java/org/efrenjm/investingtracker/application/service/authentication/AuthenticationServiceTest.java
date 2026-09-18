@@ -12,6 +12,7 @@ import org.efrenjm.investingtracker.domain.model.user.CodeUsage;
 import org.efrenjm.investingtracker.domain.model.user.User;
 import org.efrenjm.investingtracker.domain.model.user.VerificationRequest;
 import org.efrenjm.investingtracker.domain.model.user.exceptions.CodeExpiredException;
+import org.efrenjm.investingtracker.domain.model.user.exceptions.InvalidCodeException;
 import org.efrenjm.investingtracker.domain.model.user.exceptions.InvalidPasswordException;
 import org.efrenjm.investingtracker.domain.model.user.exceptions.NoVerificationInProcessException;
 import org.efrenjm.investingtracker.domain.model.wallet.Role;
@@ -515,6 +516,17 @@ class AuthenticationServiceTest {
 		User user = User.builder().id("u-1").build();
 
 		assertThrows(NoVerificationInProcessException.class, () -> authService.verifyCode(user, "ABC123"));
+	}
+
+	@Test
+	void verifyCode_WhenUserDoesNotExist_ThrowsInvalidCodeException() {
+		String userId = new ObjectId().toString();
+
+		when(userRepository.findById(userId)).thenReturn(Mono.empty());
+
+		StepVerifier.create(authService.verifyCode(userId, "AAAAAA"))
+				.expectError(InvalidCodeException.class)
+				.verify();
 	}
 
 	@Test

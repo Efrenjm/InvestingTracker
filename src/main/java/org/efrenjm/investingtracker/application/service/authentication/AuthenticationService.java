@@ -219,6 +219,7 @@ public class AuthenticationService implements AuthPort
 	{
 		AppLogger.info(log, "AUTH-050", "verifyCode", "Verifying code for userId: " + userId);
 		return userRepository.findById(userId)
+				.switchIfEmpty(Mono.error(new InvalidCodeException()))
 				.flatMap(user -> verifyCode(user, code))
 				.doOnError(e -> AppLogger.fail(log, "AUTH-051", "verifyCode", "Verification failed for userId: " + userId, e));
 	}

@@ -33,6 +33,12 @@ public class AuthenticationExceptionHandler {
 		return problemFactory.create(HttpStatus.UNAUTHORIZED, "INVALID_CREDENTIALS", "Authentication failed", ex.getMessage());
 	}
 
+	@ExceptionHandler(RegistrationNotCompletedException.class)
+	public ResponseEntity<ApiProblem> handleRegistrationNotCompleted(RegistrationNotCompletedException ex) {
+		AppLogger.warn(log, "AUTH-EX-008", "handleRegistrationNotCompleted", ex.getMessage());
+		return problemFactory.create(HttpStatus.BAD_REQUEST, "REGISTRATION_NOT_COMPLETED", "Registration is not completed", ex.getMessage());
+	}
+
 	@ExceptionHandler(UserAlreadyExistsException.class)
 	public ResponseEntity<ApiProblem> handleUserAlreadyExistsException(UserAlreadyExistsException ex) {
 		AppLogger.warn(log, "AUTH-EX-002", "handleUserAlreadyExistsException", ex.getMessage());
