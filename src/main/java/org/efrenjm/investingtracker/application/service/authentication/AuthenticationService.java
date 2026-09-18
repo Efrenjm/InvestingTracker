@@ -1,6 +1,8 @@
 package org.efrenjm.investingtracker.application.service.authentication;
 
 import org.bson.types.ObjectId;
+import org.efrenjm.investingtracker.application.security.model.SessionRecord;
+import org.efrenjm.investingtracker.application.security.port.out.SessionStorePort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.efrenjm.investingtracker.application.service.authentication.exceptions.*;
@@ -10,7 +12,7 @@ import org.efrenjm.investingtracker.domain.model.user.CodeUsage;
 import org.efrenjm.investingtracker.domain.model.user.User;
 import org.efrenjm.investingtracker.domain.model.user.VerificationRequest;
 import org.efrenjm.investingtracker.domain.model.user.exceptions.CodeExpiredException;
-import org.efrenjm.investingtracker.domain.model.user.exceptions.InvalidPasswordException;
+import org.efrenjm.investingtracker.domain.model.user.exceptions.InvalidCodeException;
 import org.efrenjm.investingtracker.domain.model.user.exceptions.NoVerificationInProcessException;
 import org.efrenjm.investingtracker.domain.model.wallet.Visibility;
 import org.efrenjm.investingtracker.domain.model.wallet.Wallet;
@@ -18,17 +20,22 @@ import org.efrenjm.investingtracker.domain.ports.inbound.*;
 import org.efrenjm.investingtracker.domain.ports.outbound.repository.AccountRepositoryPort;
 import org.efrenjm.investingtracker.domain.ports.outbound.repository.UserRepositoryPort;
 import org.efrenjm.investingtracker.domain.ports.outbound.repository.WalletRepositoryPort;
-import org.efrenjm.investingtracker.domain.ports.outbound.security.SessionPort;
+import org.efrenjm.investingtracker.domain.ports.outbound.security.JwtPort;
+import org.efrenjm.investingtracker.domain.ports.outbound.security.PasswordEncoderPort;
 import org.efrenjm.investingtracker.domain.service.AccountDomainService;
 import org.efrenjm.investingtracker.domain.service.UserDomainService;
 import org.efrenjm.investingtracker.domain.service.UserVerificationService;
 import org.efrenjm.investingtracker.domain.service.WalletDomainService;
 import org.efrenjm.investingtracker.infrastructure.logging.AppLogger;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.transaction.reactive.TransactionalOperator;
 import org.springframework.web.server.ServerWebExchange;
 
 import reactor.core.publisher.Mono;
+
+import java.time.Duration;
+import java.time.Instant;
 
 @Slf4j
 @Service
@@ -47,9 +54,13 @@ public class AuthenticationService implements AuthPort
 	private final UserVerificationService userVerificationService;
 	private final EmailPort emailService;
 	private final MessagePort messageService;
-	private final SecurityPort securityService;
-	private final SessionPort sessionService;
+	private final PasswordEncoderPort passwordEncoder;
+	private final JwtPort jwtPort;
+	private final SessionStorePort sessionStore;
 	private final TransactionalOperator transactionalOperator;
+
+	@Value("${auth.session.ttl-millis:${jwt.expiration:28800000}}")
+	private long authSessionTtlMillis = 28_800_000L;
 
 	@Override
 	public Mono<User> login(String username, String password, ServerWebExchange exchange)
@@ -61,7 +72,7 @@ public class AuthenticationService implements AuthPort
 					return Mono.error(new InvalidCredentialsException());
 				}))
 				.flatMap(user -> {
-					if (!securityService.arePasswordsEqual(password, user.getPassword()))
+					if (!passwordEncoder.matches(password, user.getPassword()))
 					{
 						AppLogger.warn(log, "AUTH-012", "login", "Login failed: password mismatch for userId " + user.getId());
 						return Mono.error(new InvalidCredentialsException());
@@ -78,8 +89,14 @@ public class AuthenticationService implements AuthPort
 						return Mono.error(new UserNotActiveException());
 					}
 
-					return securityService.generateToken(user)
-							.flatMap(jwt -> securityService.setTokenInCookie(jwt, exchange.getResponse()))
+					return jwtPort.generateToken(UserIdentity.from(user))
+							.flatMap(jwt -> {
+								Duration ttl = Duration.ofMillis(authSessionTtlMillis);
+								Instant issuedAt = Instant.now();
+								SessionRecord session = new SessionRecord(jwtPort.extractSessionId(jwt), user.getId(), user.getRoles(), issuedAt, issuedAt.plus(ttl));
+								return sessionStore.create(session, ttl)
+									.flatMap(created -> created ? jwtPort.setTokenInCookie(jwt, exchange.getResponse()) : Mono.error(new IllegalStateException("Unable to create authenticated session")));
+							})
 							.doOnSuccess(v -> AppLogger.success(log, "AUTH-015", "login", "Login successful for userId: " + user.getId()))
 							.thenReturn(user);
 				});
@@ -89,8 +106,12 @@ public class AuthenticationService implements AuthPort
 	public Mono<Void> logout(UserIdentity user, ServerWebExchange exchange)
 	{
 		AppLogger.info(log, "AUTH-020", "logout", "Logging out userId: " + user.id());
-		return sessionService.invalidateSession(user.id())
-				.then(securityService.clearTokenCookie(exchange.getResponse()))
+		var jwtCookie = exchange.getRequest().getCookies().getFirst("jwt");
+		String token = jwtCookie == null ? null : jwtCookie.getValue();
+		Mono<Void> invalidate = token == null
+				? Mono.empty()
+				: sessionStore.invalidate(jwtPort.extractSessionId(token)).then();
+		return invalidate.then(jwtPort.clearTokenCookie(exchange.getResponse()))
 				.doOnSuccess(v -> AppLogger.success(log, "AUTH-021", "logout", "Logout successful for userId: " + user.id()));
 	}
 

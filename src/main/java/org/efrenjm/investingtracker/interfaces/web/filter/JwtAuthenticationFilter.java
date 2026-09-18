@@ -2,7 +2,8 @@ package org.efrenjm.investingtracker.interfaces.web.filter;
 
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
-import org.efrenjm.investingtracker.application.service.security.SecurityService;
+import org.efrenjm.investingtracker.application.security.port.in.JwtAuthenticationUseCase;
+import org.efrenjm.investingtracker.application.security.port.in.SecuritySessionUseCase;
 import org.efrenjm.investingtracker.domain.dto.UserIdentity;
 import org.efrenjm.investingtracker.domain.model.utils.SystemRole;
 import org.springframework.http.HttpCookie;
@@ -24,7 +25,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter implements WebFilter
 {
-	private final SecurityService securityService;
+	private final JwtAuthenticationUseCase jwtAuthenticationUseCase;
+	private final SecuritySessionUseCase sessionUseCase;
 
 	@Override
 	@NonNull
@@ -32,37 +34,47 @@ public class JwtAuthenticationFilter implements WebFilter
 	{
 		String token = getTokenFromCookie(exchange);
 
-		if (!StringUtils.hasText(token) || !securityService.isValidToken(token))
-		{
-			return chain.filter(exchange);
-		}
-		String userId = securityService.extractUserId(token);
-		Set<SystemRole> roles = securityService.extractRoles(token);
+		return Mono.defer(() -> {
+			if (!StringUtils.hasText(token) || !jwtAuthenticationUseCase.isValidToken(token))
+			{
+				return chain.filter(exchange);
+			}
 
-		Set<GrantedAuthority> grantedAuthorities = Optional.ofNullable(roles).orElse(new HashSet<>()).stream()
-				.map(role -> new SimpleGrantedAuthority(role.name()))
-				.collect(Collectors.toSet());
+			String sessionId;
+			try
+			{
+				sessionId = jwtAuthenticationUseCase.extractSessionId(token);
+			}
+			catch (RuntimeException invalidToken)
+			{
+				return chain.filter(exchange);
+			}
 
+			return sessionUseCase.isSessionActive(sessionId)
+					.onErrorReturn(false)
+					.flatMap(active -> {
+						if (!active) return chain.filter(exchange);
 
-		UserIdentity userIdentity = new UserIdentity(userId, roles);
-
-		exchange.getAttributes().put("authUser", userIdentity);
-		UsernamePasswordAuthenticationToken authToken =
-				new UsernamePasswordAuthenticationToken(userIdentity, null, grantedAuthorities);
-
-		return chain.filter(exchange)
-				.contextWrite(ReactiveSecurityContextHolder.withAuthentication(authToken))
-				.contextWrite(ctx -> ctx.put(ServerWebExchange.class, exchange));
-
-//		return securityService.loadUserByUserId(userId)
-//				.flatMap(userSession -> {
-//					exchange.getAttributes().put("authUser", userSession);
-//					UsernamePasswordAuthenticationToken authToken =
-//							new UsernamePasswordAuthenticationToken(userSession, null, userSession.getRoles());
-//
-//					return chain.filter(exchange)
-//							.contextWrite(ReactiveSecurityContextHolder.withAuthentication(authToken));
-//				});
+						try
+						{
+							String userId = jwtAuthenticationUseCase.extractUserId(token);
+							Set<SystemRole> roles = jwtAuthenticationUseCase.extractRoles(token);
+							Set<GrantedAuthority> authorities = Optional.ofNullable(roles).orElse(new HashSet<>()).stream()
+									.map(role -> new SimpleGrantedAuthority(role.name()))
+									.collect(Collectors.toSet());
+							UserIdentity identity = new UserIdentity(userId, roles);
+							exchange.getAttributes().put("authUser", identity);
+							UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(identity, null, authorities);
+							return chain.filter(exchange)
+									.contextWrite(ReactiveSecurityContextHolder.withAuthentication(auth))
+									.contextWrite(ctx -> ctx.put(ServerWebExchange.class, exchange));
+						}
+						catch (RuntimeException invalidClaims)
+						{
+							return chain.filter(exchange);
+						}
+					});
+		});
 	}
 
 	public String getTokenFromCookie(ServerWebExchange exchange) {

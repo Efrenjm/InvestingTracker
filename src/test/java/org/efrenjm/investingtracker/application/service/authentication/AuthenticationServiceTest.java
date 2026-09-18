@@ -1,10 +1,10 @@
 package org.efrenjm.investingtracker.application.service.authentication;
 
 import org.bson.types.ObjectId;
+import org.efrenjm.investingtracker.application.security.port.out.SessionStorePort;
 import org.efrenjm.investingtracker.application.service.authentication.exceptions.InvalidCredentialsException;
 import org.efrenjm.investingtracker.application.service.authentication.exceptions.InvalidUsernameException;
 import org.efrenjm.investingtracker.application.service.authentication.exceptions.RegistrationNotCompletedException;
-import org.efrenjm.investingtracker.application.service.authentication.exceptions.UserAlreadyExistsException;
 import org.efrenjm.investingtracker.application.service.authentication.exceptions.UserNotActiveException;
 import org.efrenjm.investingtracker.domain.dto.UserIdentity;
 import org.efrenjm.investingtracker.domain.model.account.DebitAccount;
@@ -19,12 +19,12 @@ import org.efrenjm.investingtracker.domain.model.wallet.Role;
 import org.efrenjm.investingtracker.domain.model.wallet.Wallet;
 import org.efrenjm.investingtracker.domain.ports.inbound.EmailPort;
 import org.efrenjm.investingtracker.domain.ports.inbound.MessagePort;
-import org.efrenjm.investingtracker.domain.ports.inbound.SecurityPort;
 import org.efrenjm.investingtracker.domain.ports.inbound.ValidationPort;
 import org.efrenjm.investingtracker.domain.ports.outbound.repository.AccountRepositoryPort;
 import org.efrenjm.investingtracker.domain.ports.outbound.repository.UserRepositoryPort;
 import org.efrenjm.investingtracker.domain.ports.outbound.repository.WalletRepositoryPort;
-import org.efrenjm.investingtracker.domain.ports.outbound.security.SessionPort;
+import org.efrenjm.investingtracker.domain.ports.outbound.security.JwtPort;
+import org.efrenjm.investingtracker.domain.ports.outbound.security.PasswordEncoderPort;
 import org.efrenjm.investingtracker.domain.service.AccountDomainService;
 import org.efrenjm.investingtracker.domain.service.UserDomainService;
 import org.efrenjm.investingtracker.domain.service.UserVerificationService;
@@ -36,6 +36,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.server.reactive.ServerHttpResponse;
+import org.springframework.http.HttpCookie;
+import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.transaction.reactive.TransactionalOperator;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
@@ -70,9 +72,11 @@ class AuthenticationServiceTest {
 	@Mock
 	private MessagePort messageService;
 	@Mock
-	private SecurityPort securityService;
+	private PasswordEncoderPort passwordEncoder;
 	@Mock
-	private SessionPort sessionService;
+	private JwtPort jwtPort;
+	@Mock
+	private SessionStorePort sessionStore;
 	@Mock
 	private TransactionalOperator transactionalOperator;
 	@Mock
@@ -107,16 +111,44 @@ class AuthenticationServiceTest {
 				.build();
 
 		when(userRepository.findByAnyCredential(username)).thenReturn(Mono.just(user));
-		when(securityService.arePasswordsEqual(password, hashedPassword)).thenReturn(true);
-		when(securityService.generateToken(user)).thenReturn(Mono.just(token));
-		when(securityService.setTokenInCookie(eq(token), any())).thenReturn(Mono.empty());
+		when(passwordEncoder.matches(password, hashedPassword)).thenReturn(true);
+		when(jwtPort.generateToken(any())).thenReturn(Mono.just(token));
+		when(jwtPort.extractSessionId(token)).thenReturn("session-1");
+		when(sessionStore.create(any(), any())).thenReturn(Mono.just(true));
+		when(jwtPort.setTokenInCookie(eq(token), any())).thenReturn(Mono.empty());
 
 		StepVerifier.create(authService.login(username, password, exchange))
 				.expectNext(user)
 				.verifyComplete();
 
-		verify(securityService).generateToken(user);
-		verify(securityService).setTokenInCookie(eq(token), any());
+		verify(jwtPort).generateToken(any());
+		verify(jwtPort).setTokenInCookie(eq(token), any());
+	}
+
+	@Test
+	void login_DoesNotIssueCookieWhenSessionStoreDoesNotCreateSession() {
+		String username = "user@example.com";
+		String password = "password123";
+		String userId = new ObjectId().toString();
+		String token = "jwt-token";
+		User user = User.builder()
+				.id(userId)
+				.email(username)
+				.password("hashedPassword")
+				.active(true)
+				.build();
+
+		when(userRepository.findByAnyCredential(username)).thenReturn(Mono.just(user));
+		when(passwordEncoder.matches(password, user.getPassword())).thenReturn(true);
+		when(jwtPort.generateToken(any())).thenReturn(Mono.just(token));
+		when(jwtPort.extractSessionId(token)).thenReturn("session-1");
+		when(sessionStore.create(any(), any())).thenReturn(Mono.just(false));
+
+		StepVerifier.create(authService.login(username, password, exchange))
+				.expectError()
+				.verify();
+
+		verify(jwtPort, never()).setTokenInCookie(anyString(), any());
 	}
 
 	@Test
@@ -124,14 +156,36 @@ class AuthenticationServiceTest {
 		String userId = new ObjectId().toString();
 		UserIdentity userIdentity = new UserIdentity(userId, java.util.Set.of());
 
-		when(sessionService.invalidateSession(userId)).thenReturn(Mono.just(true));
-		when(securityService.clearTokenCookie(any())).thenReturn(Mono.empty());
+		when(exchange.getRequest()).thenReturn(org.springframework.http.server.reactive.ServerHttpRequest.class.cast(
+				org.mockito.Mockito.mock(org.springframework.http.server.reactive.ServerHttpRequest.class)));
+		when(exchange.getRequest().getCookies()).thenReturn(new LinkedMultiValueMap<>());
+		when(jwtPort.clearTokenCookie(any())).thenReturn(Mono.empty());
 
 		StepVerifier.create(authService.logout(userIdentity, exchange))
 				.verifyComplete();
 
-		verify(sessionService).invalidateSession(userId);
-		verify(securityService).clearTokenCookie(eq(response));
+		verify(jwtPort).clearTokenCookie(eq(response));
+	}
+
+	@Test
+	void logout_InvalidatesCurrentSessionIdentifierBeforeClearingCookie() {
+		String userId = new ObjectId().toString();
+		String sessionId = "session-123";
+		UserIdentity userIdentity = new UserIdentity(userId, java.util.Set.of());
+
+		LinkedMultiValueMap<String, HttpCookie> headers = new LinkedMultiValueMap<>();
+		headers.add("jwt", new HttpCookie("jwt", "jwt-token"));
+		when(exchange.getRequest()).thenReturn(org.mockito.Mockito.mock(org.springframework.http.server.reactive.ServerHttpRequest.class));
+		when(exchange.getRequest().getCookies()).thenReturn(headers);
+		when(jwtPort.extractSessionId("jwt-token")).thenReturn(sessionId);
+		when(sessionStore.invalidate(sessionId)).thenReturn(Mono.just(true));
+		when(jwtPort.clearTokenCookie(any())).thenReturn(Mono.empty());
+
+		StepVerifier.create(authService.logout(userIdentity, exchange))
+				.verifyComplete();
+
+		verify(sessionStore).invalidate(sessionId);
+		verify(jwtPort).clearTokenCookie(eq(response));
 	}
 
 	@Test
@@ -147,7 +201,7 @@ class AuthenticationServiceTest {
 				.build();
 
 		when(userRepository.findByAnyCredential(username)).thenReturn(Mono.just(user));
-		when(securityService.arePasswordsEqual(password, hashedPassword)).thenReturn(false);
+		when(passwordEncoder.matches(password, hashedPassword)).thenReturn(false);
 
 		StepVerifier.create(authService.login(username, password, exchange))
 				.expectError(InvalidCredentialsException.class)
@@ -176,7 +230,7 @@ class AuthenticationServiceTest {
 				.build();
 
 		when(userRepository.findByAnyCredential(username)).thenReturn(Mono.just(user));
-		when(securityService.arePasswordsEqual(password, hashedPassword)).thenReturn(true);
+		when(passwordEncoder.matches(password, hashedPassword)).thenReturn(true);
 
 		StepVerifier.create(authService.login(username, password, exchange))
 				.expectError(RegistrationNotCompletedException.class)
@@ -196,7 +250,7 @@ class AuthenticationServiceTest {
 				.build();
 
 		when(userRepository.findByAnyCredential(username)).thenReturn(Mono.just(user));
-		when(securityService.arePasswordsEqual(password, hashedPassword)).thenReturn(true);
+		when(passwordEncoder.matches(password, hashedPassword)).thenReturn(true);
 
 		StepVerifier.create(authService.login(username, password, exchange))
 				.expectError(UserNotActiveException.class)
