@@ -15,6 +15,8 @@ public interface JwtPort
 
 	String extractUserId(String token);
 
+	String extractSessionId(String token);
+
 	Set<SystemRole> extractRoles(String token);
 
 	Mono<Void> setTokenInCookie(String token, ServerHttpResponse response);

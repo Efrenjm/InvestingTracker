@@ -1,6 +1,7 @@
 package org.efrenjm.investingtracker.infrastructure.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.efrenjm.investingtracker.application.security.model.SessionRecord;
 import org.efrenjm.investingtracker.infrastructure.persistence.redis.UserSession;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -14,7 +15,7 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 public class RedisConfig
 {
 	@Bean
-	public ReactiveRedisTemplate<String, UserSession> reactiveRedisTemplate(
+	public ReactiveRedisTemplate<String, UserSession> profileCacheRedisTemplate(
 			ReactiveRedisConnectionFactory factory,
 			ObjectMapper objectMapper
 	)
@@ -24,6 +25,26 @@ public class RedisConfig
 
 		RedisSerializationContext<String, UserSession> context =
 				RedisSerializationContext.<String, UserSession>newSerializationContext()
+						.key(StringRedisSerializer.UTF_8)
+						.value(serializer)
+						.hashKey(StringRedisSerializer.UTF_8)
+						.hashValue(serializer)
+						.build();
+
+		return new ReactiveRedisTemplate<>(factory, context);
+	}
+
+	@Bean
+	public ReactiveRedisTemplate<String, SessionRecord> authSessionRedisTemplate(
+			ReactiveRedisConnectionFactory factory,
+			ObjectMapper objectMapper
+	)
+	{
+		Jackson2JsonRedisSerializer<SessionRecord> serializer =
+				new Jackson2JsonRedisSerializer<>(objectMapper, SessionRecord.class);
+
+		RedisSerializationContext<String, SessionRecord> context =
+				RedisSerializationContext.<String, SessionRecord>newSerializationContext()
 						.key(StringRedisSerializer.UTF_8)
 						.value(serializer)
 						.hashKey(StringRedisSerializer.UTF_8)

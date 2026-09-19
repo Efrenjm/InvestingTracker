@@ -34,11 +34,13 @@ public class JwtOperations implements JwtPort
 	public Mono<String> generateToken(UserIdentity payload) {
 		Date now = new Date();
 		Date expiryDate = new Date(now.getTime() + EXPIRATION_TIME);
+		String sessionId = UUID.randomUUID().toString();
 
 		Map<String, Object> claims = new HashMap<>();
 		claims.put("roles", payload.roles());
 
 		return Mono.just(Jwts.builder()
+				.id(sessionId)
 				.issuer("investing-tracker")
 				.subject(payload.id())
 				.claims(claims)
@@ -50,42 +52,59 @@ public class JwtOperations implements JwtPort
 
 	public boolean isValidToken(String token) {
 		try {
-			boolean isTokenExpired = Jwts.parser()
-					.verifyWith(key)
-					.build()
-					.parseSignedClaims(token)
-					.getPayload()
-					.getExpiration()
-					.before(new Date());
-			return !isTokenExpired;
-		} catch (JwtException e) {
+			Claims claims = parseClaims(token);
+			Date expiration = claims.getExpiration();
+			return expiration != null
+					&& expiration.after(new Date())
+					&& isValidSessionId(claims.getId());
+		} catch (JwtException | IllegalArgumentException e) {
 			return false;
 		}
 	}
 
 	public String extractUserId(String token) {
-		return Jwts.parser()
-				.verifyWith(key)
-				.build()
-				.parseSignedClaims(token)
-				.getPayload()
-				.getSubject();
+		return parseClaims(token).getSubject();
+	}
+
+	@Override
+	public String extractSessionId(String token) {
+		String sessionId = parseClaims(token).getId();
+		if (!isValidSessionId(sessionId)) {
+			throw new MalformedJwtException("JWT is missing a valid session identifier");
+		}
+		return sessionId;
 	}
 
 	@Override
 	public Set<SystemRole> extractRoles(String token) {
 		@SuppressWarnings("unchecked")
-		List<String> roles = Jwts.parser()
-				.verifyWith(key)
-				.build()
-				.parseSignedClaims(token)
-				.getPayload()
-				.get("roles", List.class);
+		List<String> roles = parseClaims(token).get("roles", List.class);
 
 		return roles == null ? Set.of() :
 				roles.stream()
 						.map(SystemRole::valueOf)
 						.collect(Collectors.toSet());
+	}
+
+	private Claims parseClaims(String token) {
+		return Jwts.parser()
+				.verifyWith(key)
+				.build()
+				.parseSignedClaims(token)
+				.getPayload();
+	}
+
+	private boolean isValidSessionId(String sessionId) {
+		if (sessionId == null || sessionId.isBlank()) {
+			return false;
+		}
+
+		try {
+			UUID.fromString(sessionId);
+			return true;
+		} catch (IllegalArgumentException exception) {
+			return false;
+		}
 	}
 
 	public Mono<Void> setTokenInCookie(String token, ServerHttpResponse response) {

@@ -2,10 +2,10 @@ package org.efrenjm.investingtracker.infrastructure.config;
 
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import org.efrenjm.investingtracker.application.security.port.in.UserLookupUseCase;
 import org.efrenjm.investingtracker.domain.dto.Profile;
 import org.efrenjm.investingtracker.domain.dto.UserIdentity;
 import org.efrenjm.investingtracker.domain.model.user.User;
-import org.efrenjm.investingtracker.domain.ports.inbound.SecurityPort;
 import org.efrenjm.investingtracker.interfaces.annotations.AuthUser;
 import org.springframework.core.MethodParameter;
 import org.springframework.http.HttpStatus;
@@ -18,7 +18,7 @@ import reactor.core.publisher.Mono;
 @RequiredArgsConstructor
 public class AuthUserResolver implements HandlerMethodArgumentResolver
 {
-	private final SecurityPort securityService;
+	private final UserLookupUseCase userLookupUseCase;
 
 	@Override
 	public boolean supportsParameter(MethodParameter parameter)
@@ -62,7 +62,7 @@ public class AuthUserResolver implements HandlerMethodArgumentResolver
 
 	private Mono<Profile> getProfile(String userId)
 	{
-		return securityService.loadProfileByUserId(userId)
+		return userLookupUseCase.loadProfileByUserId(userId)
 				.switchIfEmpty(Mono.error(new ResponseStatusException(
 						HttpStatus.NOT_FOUND,
 						"Profile not found for user ID: " + userId
@@ -71,7 +71,7 @@ public class AuthUserResolver implements HandlerMethodArgumentResolver
 
 	private Mono<User> getUser(String userId)
 	{
-		return securityService.loadUserByUserId(userId)
+		return userLookupUseCase.loadUserByUserId(userId)
 				.switchIfEmpty(Mono.error(new ResponseStatusException(
 						HttpStatus.NOT_FOUND,
 						"User not found for ID: " + userId
