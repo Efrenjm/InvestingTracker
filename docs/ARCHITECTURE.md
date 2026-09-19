@@ -100,6 +100,11 @@ Application services depend only on domain behavior and port contracts. They do 
 - Concrete logging/telemetry implementation and Spring runtime composition remain outside application and domain.
 - Adapters translate technical failures without embedding application policy or exposing provider details in public responses.
 
+Authentication session state follows the same boundary: application security ports own
+`SessionRecord`, session creation, activity checks and invalidation, while Redis adapters
+own key namespaces and serialization. Profile caching is a separate application port and
+must not be used as evidence that an authentication session is active.
+
 ## Incremental migration policy
 
 - New code follows the target dependency contract.

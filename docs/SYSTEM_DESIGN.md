@@ -42,12 +42,12 @@ A model, repository or frontend screen is not evidence of a working backend endp
 
 ## Authentication and request identity — observed state
 
-1. Login looks up the submitted credential, checks the password and user state, then issues a JWT cookie.
-2. `JwtAuthenticationFilter` reads the cookie, validates the token, extracts identity/roles and populates the reactive security context. The active path does not query Redis or reload the user record.
+1. Login looks up the submitted credential, checks the password and user state, creates a JWT with a unique `jti`, persists an `auth-session:{jti}` record in Redis with a matching TTL, and only then issues the JWT cookie.
+2. `JwtAuthenticationFilter` reads the cookie, validates the signature, expiry and `jti`, checks the corresponding Redis session on every request, and only then populates the reactive security context. Missing or unavailable session state remains unauthenticated.
 3. Controllers receive transport identity through the existing argument-resolution mechanism and call application ports.
-4. Logout invalidates the user's Redis session entry and then clears the browser cookie.
+4. Logout invalidates only the current `jti` session and then clears the browser cookie. Multiple sessions for one user remain independent.
 
-Consequently, Redis deletion alone does not establish revocation of an already-issued JWT: the active request filter does not consult that entry. Changes to user state or roles are not proven immediately visible to existing tokens. A Redis failure can also prevent the subsequent cookie-clear operation in the current logout chain.
+Consequently, deleting `auth-session:{jti}` revokes an already-issued JWT on the next protected request. Redis failures fail closed for authentication requests; they are not converted into token-only authentication. Profile-cache entries remain separate and do not grant authorization.
 
 Cookie construction sets HttpOnly and SameSite, but does not explicitly set Secure. `SecurityConfig` currently disables CSRF and configures CORS conditionally. These observations are implementation gaps or deployment questions, not endorsed security defaults.
 
@@ -75,7 +75,7 @@ Mongo entities represent users, wallets, accounts and transactions. Adapters map
 | Wallet creation | Saves a wallet and then links/saves the user; no equivalent transaction wrapper is present in that service method. |
 | Membership/friendship updates | Several methods save multiple documents through `Mono.zip`; concurrent completion is not an atomic commit. |
 | Wallet deletion | Deletes the wallet with member-unlinking work explicitly unfinished. |
-| Redis session/profile storage | Entries are addressed by user ID. Write and expiration are separate reactive operations; the adapter does not itself prove atomic write-with-expiry. |
+| Redis session/profile storage | Authentication entries use `auth-session:{jti}` and atomic write-with-TTL operations. Profile cache entries remain in their separate `session:` namespace. |
 | Financial representation | Account persistence currently uses `Double` for several monetary fields. A complete currency, precision and rounding contract is not established by those field types. |
 
 Do not infer universal uniqueness, optimistic concurrency, idempotency or cross-store atomicity from repository interfaces. Each affected operation needs its own evidence and acceptance criteria.

@@ -27,6 +27,8 @@ Run Gradle commands inside `backend`, using its wrapper and the Java toolchain d
 
 Integration tests require Docker/Testcontainers. The custom `integrationTest` task has `shouldRunAfter test`, which orders tasks when both are selected; it does not make `build` or `check` execute integration tests. Run them explicitly when needed. The task currently disables Testcontainers Ryuk; do not assume automatic container cleanup from this configuration.
 
+Authentication integration tests also require the Redis Testcontainer. Redis is used for revocable JWT sessions and the independent profile cache; tests should isolate both namespaces between cases and must use synthetic credentials and session data.
+
 There is no dedicated lint task or architecture-enforcement task in `build.gradle`. Do not invent commands or install tooling unless the assigned task authorizes it. This documentation consolidation adds no commit hook or remote CI enforcement.
 
 ## Reactive implementation
