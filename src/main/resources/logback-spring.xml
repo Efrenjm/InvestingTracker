@@ -1,14 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
+    <conversionRule conversionWord="origin"
+                    converterClass="org.efrenjm.investingtracker.infrastructure.logging.LogOriginConverter"/>
 
     <!-- ═══════════════════════════════════════════════════════════════
          DEV / DEFAULT PROFILE — Human-readable console output
-         Format: TIMESTAMP | LEVEL | LOGGER | MESSAGE
+         Auth/email: TIMESTAMP | LEVEL | MODULE | CLASS | LOCATION | MESSAGE
+         Other logs retain TIMESTAMP | LEVEL | LOGGER | MESSAGE
          ═══════════════════════════════════════════════════════════════ -->
     <springProfile name="dev,default">
         <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
             <encoder>
-                <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} | %-5level | %logger{36} | %msg%n</pattern>
+                <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} | %-5level | %origin{36} | %msg%n</pattern>
             </encoder>
         </appender>
 
