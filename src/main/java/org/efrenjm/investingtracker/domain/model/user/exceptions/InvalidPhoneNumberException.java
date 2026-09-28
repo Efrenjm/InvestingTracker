@@ -7,4 +7,3 @@ public class InvalidPhoneNumberException extends BadRequestException {
         super("Invalid phone number: " + phoneNumber);
     }
 }
-

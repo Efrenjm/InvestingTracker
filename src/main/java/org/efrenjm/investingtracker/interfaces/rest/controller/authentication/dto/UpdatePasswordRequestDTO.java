@@ -8,10 +8,10 @@ import lombok.Setter;
 @Setter
 @Schema(description = "Payload used by users to set or change their password.")
 public class UpdatePasswordRequestDTO extends BasePasswordRequestDTO {
-	@Schema(
-			description = "Current password used to authorize the password change. Optional when setting password for the first time.",
-			example = "Curr3ntP@ss!",
-			requiredMode = Schema.RequiredMode.NOT_REQUIRED
-	)
-	private String oldPassword;
+    @Schema(
+            description =
+                    "Current password used to authorize the password change. Optional when setting password for the first time.",
+            example = "Curr3ntP@ss!",
+            requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    private String oldPassword;
 }

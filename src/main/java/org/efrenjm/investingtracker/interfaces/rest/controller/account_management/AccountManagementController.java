@@ -1,29 +1,33 @@
-//package org.efrenjm.investingtracker.interfaces.rest.account_management;
+// package org.efrenjm.investingtracker.interfaces.rest.account_management;
 //
-//import lombok.AllArgsConstructor;
-//import org.efrenjm.investingtracker.domain.model.user.User;
-//import org.efrenjm.investingtracker.infrastructure.persistence.redis.UserSession;
-//import org.efrenjm.investingtracker.interfaces.annotations.AuthUser;
-//import org.efrenjm.investingtracker.application.dto.controller.account_management.CreateAccountRequestDTO;
-//import org.efrenjm.investingtracker.domain.dto.AccountSummary;
-//import org.efrenjm.investingtracker.application.service.account_management.AccountService;
-//import org.efrenjm.investingtracker.application.service.transaction_management.TransactionService;
-//import org.springframework.http.ResponseEntity;
-//import org.springframework.web.bind.annotation.*;
-//import reactor.core.publisher.Mono;
+// import lombok.AllArgsConstructor;
+// import org.efrenjm.investingtracker.domain.model.user.User;
+// import org.efrenjm.investingtracker.infrastructure.persistence.redis.UserSession;
+// import org.efrenjm.investingtracker.interfaces.annotations.AuthUser;
+// import
+// org.efrenjm.investingtracker.application.dto.controller.account_management.CreateAccountRequestDTO;
+// import org.efrenjm.investingtracker.domain.dto.AccountSummary;
+// import org.efrenjm.investingtracker.application.service.account_management.AccountService;
+// import
+// org.efrenjm.investingtracker.application.service.transaction_management.TransactionService;
+// import org.springframework.http.ResponseEntity;
+// import org.springframework.web.bind.annotation.*;
+// import reactor.core.publisher.Mono;
 //
-//import java.util.List;
+// import java.util.List;
 //
-//@RestController
-//@AllArgsConstructor
-//@RequestMapping("/account")
-//public class AccountManagementController {
+// @RestController
+// @AllArgsConstructor
+// @RequestMapping("/account")
+// public class AccountManagementController {
 //	private final AccountService accountService;
 //	private final TransactionService transactionService;
 //
 //	@GetMapping
-//	public Mono<ResponseEntity<List<AccountSummary>>> getAllAccounts(@RequestParam(required = false) String walletId,
-//	                                                                 @AuthUser UserSession securityUser) {
+//	public Mono<ResponseEntity<List<AccountSummary>>> getAllAccounts(@RequestParam(required = false)
+// String walletId,
+//	                                                                 @AuthUser UserSession
+// securityUser) {
 //		User user = securityUser.getDomainUser();
 //		Mono<List<AccountSummary>> accounts;
 //		if (walletId == null) {
@@ -43,7 +47,8 @@
 //	}
 //
 //	@PostMapping
-//	public Mono<ResponseEntity<Void>> createAccount(@RequestBody CreateAccountRequestDTO accountToCreate) {
+//	public Mono<ResponseEntity<Void>> createAccount(@RequestBody CreateAccountRequestDTO
+// accountToCreate) {
 //		return null;
 //	}
 //
@@ -72,4 +77,4 @@
 //	// .map(ResponseEntity::ok)
 //	// .block();
 //	// }
-//}
+// }

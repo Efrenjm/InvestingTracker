@@ -1,6 +1,10 @@
 package org.efrenjm.investingtracker.domain.model.account;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 
 @AllArgsConstructor
@@ -9,9 +13,8 @@ import lombok.experimental.SuperBuilder;
 @Getter
 @Setter
 @ToString
-public class CreditAccount extends BaseAccount
-{
-	private Double currentDebt;
+public class CreditAccount extends BaseAccount {
+    private Double currentDebt;
 
-	private Double creditLimit;
+    private Double creditLimit;
 }

@@ -9,19 +9,18 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Profile;
 
 @Configuration
-public class IdGeneratorConfig
-{
-	@Bean
-	@Primary
-	@Profile("!test")
-	public IdGeneratorPort defaultIdGenerator() {
-		return new MongoIdGenerator();
-	}
+public class IdGeneratorConfig {
+    @Bean
+    @Primary
+    @Profile("!test")
+    public IdGeneratorPort defaultIdGenerator() {
+        return new MongoIdGenerator();
+    }
 
-	@Bean
-	@Primary
-	@Profile("test")
-	public IdGeneratorPort testIdGenerator() {
-		return new UuidIdGenerator();
-	}
+    @Bean
+    @Primary
+    @Profile("test")
+    public IdGeneratorPort testIdGenerator() {
+        return new UuidIdGenerator();
+    }
 }

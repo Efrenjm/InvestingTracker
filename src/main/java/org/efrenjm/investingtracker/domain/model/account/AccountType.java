@@ -6,8 +6,8 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 @Getter
 public enum AccountType {
-	DEBIT("debit"),
-	CREDIT("credit"),
-	ASSET("asset");
-	private final String type;
+    DEBIT("debit"),
+    CREDIT("credit"),
+    ASSET("asset");
+    private final String type;
 }

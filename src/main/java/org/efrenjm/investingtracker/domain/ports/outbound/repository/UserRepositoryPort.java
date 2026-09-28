@@ -1,7 +1,6 @@
 package org.efrenjm.investingtracker.domain.ports.outbound.repository;
 
 import org.efrenjm.investingtracker.domain.dto.AccountSummary;
-import org.efrenjm.investingtracker.domain.dto.Profile;
 import org.efrenjm.investingtracker.domain.dto.PublicProfile;
 import org.efrenjm.investingtracker.domain.dto.WalletSummary;
 import org.efrenjm.investingtracker.domain.model.user.User;
@@ -9,25 +8,25 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 public interface UserRepositoryPort {
-	Mono<User> findById(String userId);
+    Mono<User> findById(String userId);
 
-//	Mono<Profile> findProfile(String email);
+    //	Mono<Profile> findProfile(String email);
 
-	Mono<User> findSecurityUser(String username);
+    Mono<User> findSecurityUser(String username);
 
-	Mono<User> findByAnyCredential(String credential);
+    Mono<User> findByAnyCredential(String credential);
 
-	Mono<User> save(User user);
+    Mono<User> save(User user);
 
-	Mono<Void> delete(String userId);
+    Mono<Void> delete(String userId);
 
-	Mono<User> findEmailInUse(String email);
+    Mono<User> findEmailInUse(String email);
 
-	Mono<User> findPhoneInUse(String phone);
+    Mono<User> findPhoneInUse(String phone);
 
-	Flux<AccountSummary> fetchAccounts(String userId);
+    Flux<AccountSummary> fetchAccounts(String userId);
 
-	Flux<PublicProfile> fetchFriends(String userId);
+    Flux<PublicProfile> fetchFriends(String userId);
 
-	Flux<WalletSummary> fetchWallets(String userId);
+    Flux<WalletSummary> fetchWallets(String userId);
 }

@@ -7,4 +7,3 @@ public class InvalidEmailException extends BadRequestException {
         super("Invalid email address: " + email);
     }
 }
-

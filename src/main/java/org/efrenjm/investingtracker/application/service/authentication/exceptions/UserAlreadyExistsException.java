@@ -3,7 +3,7 @@ package org.efrenjm.investingtracker.application.service.authentication.exceptio
 import org.efrenjm.investingtracker.domain.exception.ConflictException;
 
 public class UserAlreadyExistsException extends ConflictException {
-	public UserAlreadyExistsException() {
-		super("You’re almost there! Check your inbox for the next steps.");
-	}
+    public UserAlreadyExistsException() {
+        super("You’re almost there! Check your inbox for the next steps.");
+    }
 }

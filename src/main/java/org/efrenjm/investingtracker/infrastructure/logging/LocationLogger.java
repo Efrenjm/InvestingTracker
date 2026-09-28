@@ -21,15 +21,30 @@ public final class LocationLogger {
         return new LocationLogger(source, module);
     }
 
-    public void info(String location, String message) { write(Level.INFO, location, message); }
-    public void warn(String location, String message) { write(Level.WARN, location, message); }
-    public void error(String location, String message) { write(Level.ERROR, location, message); }
-    public void debug(String location, String message) { write(Level.DEBUG, location, message); }
+    public void info(String location, String message) {
+        write(Level.INFO, location, message);
+    }
+
+    public void warn(String location, String message) {
+        write(Level.WARN, location, message);
+    }
+
+    public void error(String location, String message) {
+        write(Level.ERROR, location, message);
+    }
+
+    public void debug(String location, String message) {
+        write(Level.DEBUG, location, message);
+    }
 
     private void write(Level level, String location, String message) {
         if (location == null || !location.matches("[a-z0-9]{9}")) {
-            throw new IllegalArgumentException("A static nine-character lowercase alphanumeric location is required");
+            throw new IllegalArgumentException(
+                    "A static nine-character lowercase alphanumeric location is required");
         }
-        logger.atLevel(level).addKeyValue("module", module).addKeyValue("location", location).log(message);
+        logger.atLevel(level)
+                .addKeyValue("module", module)
+                .addKeyValue("location", location)
+                .log(message);
     }
 }

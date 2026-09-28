@@ -1,5 +1,3 @@
 package org.efrenjm.investingtracker.domain.ports.inbound;
 
-public interface TransactionPort
-{
-}
+public interface TransactionPort {}

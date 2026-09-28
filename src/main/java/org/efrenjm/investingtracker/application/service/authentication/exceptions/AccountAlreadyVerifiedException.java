@@ -3,7 +3,7 @@ package org.efrenjm.investingtracker.application.service.authentication.exceptio
 import org.efrenjm.investingtracker.domain.exception.BadRequestException;
 
 public class AccountAlreadyVerifiedException extends BadRequestException {
-	public AccountAlreadyVerifiedException() {
-		super("Account already verified. Please log in.");
-	}
+    public AccountAlreadyVerifiedException() {
+        super("Account already verified. Please log in.");
+    }
 }

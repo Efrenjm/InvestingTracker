@@ -2,7 +2,6 @@ package org.efrenjm.investingtracker.integration;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -15,17 +14,16 @@ import java.util.regex.Pattern;
 /**
  * HTTP client used to interact with the Mailpit API in integration tests.
  *
- * Mailpit exposes a REST API on port 8025 that allows tests to read emails
- * sent by the application, without requiring a real SMTP server.
+ * <p>Mailpit exposes a REST API on port 8025 that allows tests to read emails sent by the
+ * application, without requiring a real SMTP server.
  *
- * API docs: https://mailpit.axllent.org/docs/api-v1/
+ * <p>API docs: https://mailpit.axllent.org/docs/api-v1/
  */
 public class MailpitClient {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-    private static final HttpClient HTTP_CLIENT = HttpClient.newBuilder()
-            .connectTimeout(Duration.ofSeconds(5))
-            .build();
+    private static final HttpClient HTTP_CLIENT =
+            HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
 
     private final String baseUrl;
 
@@ -34,8 +32,8 @@ public class MailpitClient {
     }
 
     /**
-     * Waits until at least one email arrives for the target recipient
-     * and returns the plain-text body of the latest message.
+     * Waits until at least one email arrives for the target recipient and returns the plain-text
+     * body of the latest message.
      *
      * @param toEmail recipient address used to filter messages
      * @param timeoutMs maximum wait time in milliseconds
@@ -53,31 +51,31 @@ public class MailpitClient {
             }
             Thread.sleep(500);
         }
-        throw new AssertionError("No email received for " + toEmail + " within " + timeoutMs + "ms");
+        throw new AssertionError(
+                "No email received for " + toEmail + " within " + timeoutMs + "ms");
     }
 
-    /**
-     * Extracts a 6-character alphanumeric verification code (A-Z, 0-9)
-     * from the email body.
-     */
+    /** Extracts a 6-character alphanumeric verification code (A-Z, 0-9) from the email body. */
     public String extractVerificationCode(String emailBody) {
         Pattern pattern = Pattern.compile("\\b([A-Z0-9]{6})\\b");
         Matcher matcher = pattern.matcher(emailBody);
         if (matcher.find()) {
             return matcher.group(1);
         }
-        throw new AssertionError("No 6-character alphanumeric verification code found in email body:\n" + emailBody);
+        throw new AssertionError(
+                "No 6-character alphanumeric verification code found in email body:\n" + emailBody);
     }
 
     /**
-     * Deletes all emails currently stored in Mailpit.
-     * Useful to clear state between tests (@BeforeEach).
+     * Deletes all emails currently stored in Mailpit. Useful to clear state between tests
+     * (@BeforeEach).
      */
     public void deleteAllMessages() throws IOException, InterruptedException {
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(baseUrl + "/api/v1/messages"))
-                .DELETE()
-                .build();
+        HttpRequest request =
+                HttpRequest.newBuilder()
+                        .uri(URI.create(baseUrl + "/api/v1/messages"))
+                        .DELETE()
+                        .build();
         HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.discarding());
     }
 
@@ -86,16 +84,20 @@ public class MailpitClient {
     // -------------------------------------------------------------------------
 
     private String findLatestMessageId(String toEmail) throws IOException, InterruptedException {
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(baseUrl + "/api/v1/messages?limit=50"))
-                .GET()
-                .build();
+        HttpRequest request =
+                HttpRequest.newBuilder()
+                        .uri(URI.create(baseUrl + "/api/v1/messages?limit=50"))
+                        .GET()
+                        .build();
 
-        HttpResponse<String> response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
+        HttpResponse<String> response =
+                HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
         JsonNode root = OBJECT_MAPPER.readTree(response.body());
         JsonNode messages = root.path("messages");
 
-        if (!messages.isArray()) return null;
+        if (!messages.isArray()) {
+            return null;
+        }
 
         for (JsonNode msg : messages) {
             JsonNode toArray = msg.path("To");
@@ -112,19 +114,22 @@ public class MailpitClient {
     }
 
     private String fetchMessageBody(String messageId) throws IOException, InterruptedException {
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(baseUrl + "/api/v1/message/" + messageId))
-                .GET()
-                .build();
+        HttpRequest request =
+                HttpRequest.newBuilder()
+                        .uri(URI.create(baseUrl + "/api/v1/message/" + messageId))
+                        .GET()
+                        .build();
 
-        HttpResponse<String> response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
+        HttpResponse<String> response =
+                HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
         JsonNode root = OBJECT_MAPPER.readTree(response.body());
 
         // Prefer plain text over HTML
         String text = root.path("Text").asText("");
-        if (!text.isBlank()) return text;
+        if (!text.isBlank()) {
+            return text;
+        }
 
         return root.path("HTML").asText("");
     }
 }
-

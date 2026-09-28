@@ -1,9 +1,8 @@
 package org.efrenjm.investingtracker.application.security.model;
 
-import org.efrenjm.investingtracker.domain.model.utils.SystemRole;
-
 import java.time.Instant;
 import java.util.Set;
+import org.efrenjm.investingtracker.domain.model.utils.SystemRole;
 
 /**
  * Framework-neutral representation of an authenticated session.
@@ -15,15 +14,12 @@ import java.util.Set;
  * @param expiration time at which the session expires
  */
 public record SessionRecord(
-		String sessionId,
-		String userId,
-		Set<SystemRole> roles,
-		Instant issuedAt,
-		Instant expiration
-)
-{
-	public SessionRecord
-	{
-		roles = roles == null ? Set.of() : Set.copyOf(roles);
-	}
+        String sessionId,
+        String userId,
+        Set<SystemRole> roles,
+        Instant issuedAt,
+        Instant expiration) {
+    public SessionRecord {
+        roles = roles == null ? Set.of() : Set.copyOf(roles);
+    }
 }

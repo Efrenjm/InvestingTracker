@@ -1,6 +1,9 @@
 package org.efrenjm.investingtracker.infrastructure.persistence.entity.wallet;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 import org.efrenjm.investingtracker.domain.model.wallet.TransactionCategory;
 
@@ -9,20 +12,16 @@ import org.efrenjm.investingtracker.domain.model.wallet.TransactionCategory;
 @Getter
 @Setter
 @ToString
-public class TransactionCategoryEntity extends BaseTransactionCategoryEntity
-{
-	public static TransactionCategoryEntity fromDomain(TransactionCategory category)
-	{
-		if (category == null)
-			return null;
+public class TransactionCategoryEntity extends BaseTransactionCategoryEntity {
+    public static TransactionCategoryEntity fromDomain(TransactionCategory category) {
+        if (category == null) {
+            return null;
+        }
 
-		return populateBaseEntityFields(TransactionCategoryEntity.builder(), category)
-				.build();
-	}
+        return populateBaseEntityFields(TransactionCategoryEntity.builder(), category).build();
+    }
 
-	public TransactionCategory toDomain()
-	{
-		return populateBaseDomainFields(TransactionCategory.builder())
-				.build();
-	}
+    public TransactionCategory toDomain() {
+        return populateBaseDomainFields(TransactionCategory.builder()).build();
+    }
 }

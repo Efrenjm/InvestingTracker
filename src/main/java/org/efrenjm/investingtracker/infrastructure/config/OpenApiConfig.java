@@ -10,19 +10,23 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class OpenApiConfig {
 
-	@Bean
-	public OpenAPI investingTrackerOpenAPI() {
-		return new OpenAPI()
-				.info(new Info()
-						.title("InvestingTracker API")
-						.version("v1")
-						.description("Reactive API for user authentication, wallets, accounts and transactions."))
-				.components(new Components()
-						.addSecuritySchemes("jwtCookieAuth",
-								new SecurityScheme()
-										.type(SecurityScheme.Type.APIKEY)
-										.in(SecurityScheme.In.COOKIE)
-										.name("jwt")
-										.description("JWT authentication cookie")));
-	}
+    @Bean
+    public OpenAPI investingTrackerOpenAPI() {
+        return new OpenAPI()
+                .info(
+                        new Info()
+                                .title("InvestingTracker API")
+                                .version("v1")
+                                .description(
+                                        "Reactive API for user authentication, wallets, accounts and transactions."))
+                .components(
+                        new Components()
+                                .addSecuritySchemes(
+                                        "jwtCookieAuth",
+                                        new SecurityScheme()
+                                                .type(SecurityScheme.Type.APIKEY)
+                                                .in(SecurityScheme.In.COOKIE)
+                                                .name("jwt")
+                                                .description("JWT authentication cookie")));
+    }
 }

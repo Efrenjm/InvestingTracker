@@ -1,8 +1,17 @@
 package org.efrenjm.investingtracker.application.service.security;
 
-import org.efrenjm.investingtracker.application.service.user_service.exceptions.UserNotFoundException;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.time.Duration;
+import java.util.Set;
 import org.efrenjm.investingtracker.application.security.port.out.ProfileCachePort;
 import org.efrenjm.investingtracker.application.security.port.out.SessionStorePort;
+import org.efrenjm.investingtracker.application.service.user_service.exceptions.UserNotFoundException;
 import org.efrenjm.investingtracker.domain.dto.Profile;
 import org.efrenjm.investingtracker.domain.model.user.User;
 import org.efrenjm.investingtracker.domain.model.utils.SystemRole;
@@ -16,102 +25,89 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
-import java.time.Duration;
-import java.util.Set;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 @ExtendWith(MockitoExtension.class)
 class SecurityServiceTest {
 
-	@Mock
-	private UserRepositoryPort userRepository;
-	@Mock
-	private ProfileCachePort profileCache;
-	@Mock
-	private SessionStorePort sessionStore;
-	@Mock
-	private JwtPort jwtOperations;
+    @Mock private UserRepositoryPort userRepository;
+    @Mock private ProfileCachePort profileCache;
+    @Mock private SessionStorePort sessionStore;
+    @Mock private JwtPort jwtOperations;
 
-	@InjectMocks
-	private SecurityService securityService;
+    @InjectMocks private SecurityService securityService;
 
+    @Test
+    void isValidTokenShouldDelegateToJwtPort() {
+        when(jwtOperations.isValidToken("token")).thenReturn(true);
+        assertTrue(securityService.isValidToken("token"));
+    }
 
-	@Test
-	void isValidToken_ShouldDelegateToJwtPort() {
-		when(jwtOperations.isValidToken("token")).thenReturn(true);
-		assertTrue(securityService.isValidToken("token"));
-	}
+    @Test
+    void extractUserIdShouldDelegateToJwtPort() {
+        when(jwtOperations.extractUserId("token")).thenReturn("u-1");
+        assertEquals("u-1", securityService.extractUserId("token"));
+    }
 
-	@Test
-	void extractUserId_ShouldDelegateToJwtPort() {
-		when(jwtOperations.extractUserId("token")).thenReturn("u-1");
-		assertEquals("u-1", securityService.extractUserId("token"));
-	}
+    @Test
+    void extractSessionIdShouldDelegateToJwtPort() {
+        when(jwtOperations.extractSessionId("token")).thenReturn("session-1");
+        assertEquals("session-1", securityService.extractSessionId("token"));
+    }
 
-	@Test
-	void extractSessionId_ShouldDelegateToJwtPort() {
-		when(jwtOperations.extractSessionId("token")).thenReturn("session-1");
-		assertEquals("session-1", securityService.extractSessionId("token"));
-	}
+    @Test
+    void extractRolesShouldDelegateToJwtPort() {
+        Set<SystemRole> roles = Set.of(SystemRole.STANDARD);
+        when(jwtOperations.extractRoles("token")).thenReturn(roles);
+        assertEquals(roles, securityService.extractRoles("token"));
+    }
 
-	@Test
-	void extractRoles_ShouldDelegateToJwtPort() {
-		Set<SystemRole> roles = Set.of(SystemRole.STANDARD);
-		when(jwtOperations.extractRoles("token")).thenReturn(roles);
-		assertEquals(roles, securityService.extractRoles("token"));
-	}
+    @Test
+    void loadUserByUsernameWhenNotFoundShouldEmitUserNotFoundException() {
+        when(userRepository.findByAnyCredential("unknown")).thenReturn(Mono.empty());
 
-	@Test
-	void loadUserByUsername_WhenNotFound_ShouldEmitUserNotFoundException() {
-		when(userRepository.findByAnyCredential("unknown")).thenReturn(Mono.empty());
+        StepVerifier.create(securityService.loadUserByUsername("unknown"))
+                .expectError(UserNotFoundException.class)
+                .verify();
+    }
 
-		StepVerifier.create(securityService.loadUserByUsername("unknown"))
-				.expectError(UserNotFoundException.class)
-				.verify();
-	}
+    @Test
+    void loadUserByUserIdWhenNotFoundShouldEmitUserNotFoundException() {
+        when(userRepository.findById("missing-id")).thenReturn(Mono.empty());
 
-	@Test
-	void loadUserByUserId_WhenNotFound_ShouldEmitUserNotFoundException() {
-		when(userRepository.findById("missing-id")).thenReturn(Mono.empty());
+        StepVerifier.create(securityService.loadUserByUserId("missing-id"))
+                .expectError(UserNotFoundException.class)
+                .verify();
+    }
 
-		StepVerifier.create(securityService.loadUserByUserId("missing-id"))
-				.expectError(UserNotFoundException.class)
-				.verify();
-	}
+    @Test
+    void loadProfileByUserIdWhenSessionExistsShouldReturnCachedProfile() {
+        Profile cached =
+                new Profile("u-1", "user", "u@example.com", null, null, null, null, null, Set.of());
+        when(profileCache.getUserProfile("u-1")).thenReturn(Mono.just(cached));
 
-	@Test
-	void loadProfileByUserId_WhenSessionExists_ShouldReturnCachedProfile() {
-		Profile cached = new Profile("u-1", "user", "u@example.com", null, null, null, null, null, Set.of());
-		when(profileCache.getUserProfile("u-1")).thenReturn(Mono.just(cached));
+        StepVerifier.create(securityService.loadProfileByUserId("u-1"))
+                .expectNext(cached)
+                .verifyComplete();
 
-		StepVerifier.create(securityService.loadProfileByUserId("u-1"))
-				.expectNext(cached)
-				.verifyComplete();
+        verify(profileCache).getUserProfile("u-1");
+    }
 
-		verify(profileCache).getUserProfile("u-1");
-	}
+    @Test
+    void loadProfileByUserIdWhenSessionMissingShouldLoadAndStoreInSession() {
+        User user = User.builder().id("u-1").username("user").email("u@example.com").build();
+        when(profileCache.getUserProfile("u-1")).thenReturn(Mono.empty());
+        when(userRepository.findById("u-1")).thenReturn(Mono.just(user));
+        when(profileCache.storeUserProfile(eq("u-1"), any(Profile.class), any(Duration.class)))
+                .thenReturn(Mono.just(true));
 
-	@Test
-	void loadProfileByUserId_WhenSessionMissing_ShouldLoadAndStoreInSession() {
-		User user = User.builder().id("u-1").username("user").email("u@example.com").build();
-		when(profileCache.getUserProfile("u-1")).thenReturn(Mono.empty());
-		when(userRepository.findById("u-1")).thenReturn(Mono.just(user));
-		when(profileCache.storeUserProfile(eq("u-1"), any(Profile.class), any(Duration.class))).thenReturn(Mono.just(true));
+        StepVerifier.create(securityService.loadProfileByUserId("u-1"))
+                .assertNext(
+                        profile -> {
+                            assertEquals("u-1", profile.id());
+                            assertEquals("user", profile.username());
+                            assertEquals("u@example.com", profile.email());
+                        })
+                .verifyComplete();
 
-		StepVerifier.create(securityService.loadProfileByUserId("u-1"))
-				.assertNext(profile -> {
-					assertEquals("u-1", profile.id());
-					assertEquals("user", profile.username());
-					assertEquals("u@example.com", profile.email());
-				})
-				.verifyComplete();
-
-		verify(profileCache).storeUserProfile(eq("u-1"), any(Profile.class), any(Duration.class));
-	}
-
+        verify(profileCache).storeUserProfile(eq("u-1"), any(Profile.class), any(Duration.class));
+    }
 }

@@ -7,9 +7,7 @@ import org.efrenjm.investingtracker.interfaces.rest.controller.user_management.d
 
 @Schema(description = "Response containing authenticated user information.")
 public record AuthResponseDTO(
-        @Schema(description = "The authenticated user profile.")
-        UserWebDTO user
-) {
+        @Schema(description = "The authenticated user profile.") UserWebDTO user) {
     public static AuthResponseDTO from(User user) {
         return new AuthResponseDTO(UserWebDTO.from(Profile.from(user)));
     }

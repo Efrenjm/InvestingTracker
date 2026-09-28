@@ -1,5 +1,11 @@
 package org.efrenjm.investingtracker.infrastructure.config;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
+
+import java.util.List;
 import org.efrenjm.investingtracker.application.service.security.SecurityService;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.http.server.reactive.MockServerHttpRequest;
@@ -7,19 +13,12 @@ import org.springframework.mock.web.server.MockServerWebExchange;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.reactive.CorsConfigurationSource;
 
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.mock;
-
 class SecurityConfigTest {
 
     private final SecurityService securityService = mock(SecurityService.class);
 
     @Test
-    void corsConfigurationSource_WithoutAllowedOrigins_ThrowsException() {
+    void corsConfigurationSourceWithoutAllowedOriginsThrowsException() {
         CorsProperties props = new CorsProperties();
         props.setEnabled(true);
         props.setAllowCredentials(true);
@@ -31,7 +30,7 @@ class SecurityConfigTest {
     }
 
     @Test
-    void corsConfigurationSource_WithWildcardAndCredentials_ThrowsException() {
+    void corsConfigurationSourceWithWildcardAndCredentialsThrowsException() {
         CorsProperties props = new CorsProperties();
         props.setEnabled(true);
         props.setAllowCredentials(true);
@@ -43,7 +42,7 @@ class SecurityConfigTest {
     }
 
     @Test
-    void corsConfigurationSource_WithExplicitOrigins_ReturnsConfiguredCors() {
+    void corsConfigurationSourceWithExplicitOriginsReturnsConfiguredCors() {
         CorsProperties props = new CorsProperties();
         props.setEnabled(true);
         props.setAllowCredentials(true);
@@ -58,9 +57,9 @@ class SecurityConfigTest {
 
         assertNotNull(cors);
         assertEquals(List.of("http://localhost:3000"), cors.getAllowedOrigins());
-        assertEquals(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"), cors.getAllowedMethods());
+        assertEquals(
+                List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"),
+                cors.getAllowedMethods());
         assertEquals(true, cors.getAllowCredentials());
     }
 }
-
-

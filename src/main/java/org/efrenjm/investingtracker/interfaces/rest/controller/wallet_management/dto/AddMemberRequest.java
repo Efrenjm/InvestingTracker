@@ -2,7 +2,4 @@ package org.efrenjm.investingtracker.interfaces.rest.controller.wallet_managemen
 
 import jakarta.validation.constraints.NotBlank;
 
-public record AddMemberRequest(
-		@NotBlank String memberId,
-		@NotBlank String roleName
-) {}
+public record AddMemberRequest(@NotBlank String memberId, @NotBlank String roleName) {}

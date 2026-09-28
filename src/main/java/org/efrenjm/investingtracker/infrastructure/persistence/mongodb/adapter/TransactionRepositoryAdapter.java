@@ -6,5 +6,4 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 @RequiredArgsConstructor
-public class TransactionRepositoryAdapter implements TransactionRepositoryPort {
-}
+public class TransactionRepositoryAdapter implements TransactionRepositoryPort {}

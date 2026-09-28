@@ -1,6 +1,7 @@
 package org.efrenjm.investingtracker.integration;
 
 import com.redis.testcontainers.RedisContainer;
+import java.time.Duration;
 import org.efrenjm.investingtracker.domain.ports.outbound.utils.SmsPort;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,28 +18,24 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
-import java.time.Duration;
-
 /**
- * Base class for all integration tests.
- * Automatically starts Docker containers for MongoDB, Redis, and Mailpit
- * using Testcontainers. It does not affect the development database.
+ * Base class for all integration tests. Automatically starts Docker containers for MongoDB, Redis,
+ * and Mailpit using Testcontainers. It does not affect the development database.
  *
- * Cleans MongoDB and Redis before each test to guarantee isolation.
+ * <p>Cleans MongoDB and Redis before each test to guarantee isolation.
  *
- * Requirement: Docker must be running.
+ * <p>Requirement: Docker must be running.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Testcontainers
 public abstract class IntegrationTestBase {
 
     /**
-     * Twilio is not part of the integration-test scope. Replacing the provider
-     * adapter keeps the application context independent from Twilio credentials
-     * while preserving the application-level SMS port.
+     * Twilio is not part of the integration-test scope. Replacing the provider adapter keeps the
+     * application context independent from Twilio credentials while preserving the
+     * application-level SMS port.
      */
-    @MockBean
-    private SmsPort smsPort;
+    @MockBean private SmsPort smsPort;
 
     @Container
     static final MongoDBContainer mongoDBContainer =
@@ -51,9 +48,8 @@ public abstract class IntegrationTestBase {
                     .withStartupTimeout(Duration.ofMinutes(2));
 
     /**
-     * Mailpit: fake SMTP server with an HTTP API to read test emails.
-     * Port 1025 -> SMTP (receives emails from the app)
-     * Port 8025 -> HTTP API (used by tests to read emails)
+     * Mailpit: fake SMTP server with an HTTP API to read test emails. Port 1025 -> SMTP (receives
+     * emails from the app) Port 8025 -> HTTP API (used by tests to read emails)
      */
     @Container
     @SuppressWarnings("resource")
@@ -63,26 +59,19 @@ public abstract class IntegrationTestBase {
                     .withStartupTimeout(Duration.ofMinutes(2))
                     .waitingFor(Wait.forListeningPort()); // Faster wait strategy than HTTP check
 
-    @Autowired
-    private ReactiveMongoTemplate mongoTemplate;
+    @Autowired private ReactiveMongoTemplate mongoTemplate;
 
-    @Autowired
-    private ReactiveRedisConnectionFactory redisConnectionFactory;
+    @Autowired private ReactiveRedisConnectionFactory redisConnectionFactory;
 
     /**
-     * Cleans all MongoDB collections and all Redis keys
-     * before each test to guarantee full test isolation.
+     * Cleans all MongoDB collections and all Redis keys before each test to guarantee full test
+     * isolation.
      */
     @BeforeEach
     void cleanDatabase() {
-        mongoTemplate.getCollectionNames()
-                .flatMap(mongoTemplate::dropCollection)
-                .blockLast();
+        mongoTemplate.getCollectionNames().flatMap(mongoTemplate::dropCollection).blockLast();
 
-        redisConnectionFactory.getReactiveConnection()
-                .serverCommands()
-                .flushAll()
-                .block();
+        redisConnectionFactory.getReactiveConnection().serverCommands().flushAll().block();
     }
 
     @DynamicPropertySource
@@ -108,9 +97,7 @@ public abstract class IntegrationTestBase {
         registry.add("app.security.cors.allowed-origins[0]", () -> "http://localhost");
     }
 
-    /**
-     * Returns the base URL of the Mailpit HTTP API used to read emails.
-     */
+    /** Returns the base URL of the Mailpit HTTP API used to read emails. */
     protected static String getMailpitApiUrl() {
         return "http://" + mailpitContainer.getHost() + ":" + mailpitContainer.getMappedPort(8025);
     }

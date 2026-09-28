@@ -1,23 +1,22 @@
 package org.efrenjm.investingtracker.domain.dto;
 
+import java.util.Date;
+import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-
-import java.util.Date;
-import java.util.List;
 
 @Getter
 @Setter
 @ToString
 public class TransactionSummary {
-	private String name;
+    private String name;
 
-	private String type;
+    private String type;
 
-	private Double totalAmount;
+    private Double totalAmount;
 
-	private List<String> categories;
+    private List<String> categories;
 
-	private Date transactionDate;
+    private Date transactionDate;
 }

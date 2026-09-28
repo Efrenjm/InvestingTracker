@@ -1,10 +1,9 @@
 package org.efrenjm.investingtracker.interfaces.rest.controller.user_management.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import org.efrenjm.investingtracker.domain.dto.Profile;
-
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.efrenjm.investingtracker.domain.dto.Profile;
 
 @Schema(description = "User profile information as expected by the frontend.")
 public record UserWebDTO(
@@ -16,8 +15,7 @@ public record UserWebDTO(
         String middleName,
         String lastName,
         String avatarUrl,
-        Set<String> roles
-) {
+        Set<String> roles) {
     public static UserWebDTO from(Profile profile) {
         if (profile == null) {
             return null;
@@ -26,9 +24,10 @@ public record UserWebDTO(
         if (username == null || username.isBlank()) {
             username = profile.email() != null ? profile.email() : profile.phoneNumber();
         }
-        Set<String> roles = profile.roles() != null
-                ? profile.roles().stream().map(Enum::name).collect(Collectors.toSet())
-                : Set.of();
+        Set<String> roles =
+                profile.roles() != null
+                        ? profile.roles().stream().map(Enum::name).collect(Collectors.toSet())
+                        : Set.of();
         return new UserWebDTO(
                 profile.id(),
                 username,
@@ -38,7 +37,6 @@ public record UserWebDTO(
                 profile.middleName(),
                 profile.lastName(),
                 profile.profilePicture(),
-                roles
-        );
+                roles);
     }
 }

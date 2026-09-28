@@ -1,9 +1,12 @@
 package org.efrenjm.investingtracker.domain.model;
 
-import lombok.*;
-import lombok.experimental.SuperBuilder;
-
 import java.util.Date;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
+import lombok.experimental.SuperBuilder;
 
 @NoArgsConstructor
 @AllArgsConstructor
@@ -11,11 +14,10 @@ import java.util.Date;
 @Getter
 @Setter
 @ToString
-public abstract class BaseModel
-{
-	protected String id;
+public abstract class BaseModel {
+    protected String id;
 
-	protected Date createdAt;
+    protected Date createdAt;
 
-	protected Date updatedAt;
+    protected Date updatedAt;
 }

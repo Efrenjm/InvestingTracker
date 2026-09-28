@@ -7,9 +7,13 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 public interface WalletRepositoryPort {
-	Mono<Wallet> save(Wallet wallet);
-	Mono<Wallet> findById(String walletId);
-	Flux<AccountSummary> fetchAccounts(String walletId);
-	Mono<Void> delete(String walletId);
-	Flux<Wallet> findByVisibility(Visibility visibility);
+    Mono<Wallet> save(Wallet wallet);
+
+    Mono<Wallet> findById(String walletId);
+
+    Flux<AccountSummary> fetchAccounts(String walletId);
+
+    Mono<Void> delete(String walletId);
+
+    Flux<Wallet> findByVisibility(Visibility visibility);
 }

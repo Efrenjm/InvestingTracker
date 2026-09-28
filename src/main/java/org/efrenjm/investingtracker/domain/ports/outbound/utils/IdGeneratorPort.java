@@ -1,8 +1,7 @@
 package org.efrenjm.investingtracker.domain.ports.outbound.utils;
 
-public interface IdGeneratorPort
-{
-	String generateId();
+public interface IdGeneratorPort {
+    String generateId();
 
-	boolean isValidId(String id);
+    boolean isValidId(String id);
 }

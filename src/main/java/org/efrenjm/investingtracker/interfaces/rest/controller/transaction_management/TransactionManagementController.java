@@ -7,5 +7,4 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("transaction")
-public class TransactionManagementController {
-}
+public class TransactionManagementController {}

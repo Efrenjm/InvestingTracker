@@ -3,7 +3,7 @@ package org.efrenjm.investingtracker.application.service.authentication.exceptio
 import org.efrenjm.investingtracker.domain.exception.BadRequestException;
 
 public class InvalidCredentialsException extends BadRequestException {
-	public InvalidCredentialsException() {
-		super("Invalid user/password combination. Please try again.");
-	}
+    public InvalidCredentialsException() {
+        super("Invalid user/password combination. Please try again.");
+    }
 }

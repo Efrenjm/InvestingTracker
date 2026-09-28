@@ -9,15 +9,15 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 public class PasswordEncoderAdapter implements PasswordEncoderPort {
-	private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
-	@Override
-	public String encode(String text) {
-		return passwordEncoder.encode(text);
-	}
+    @Override
+    public String encode(String text) {
+        return passwordEncoder.encode(text);
+    }
 
-	@Override
-	public boolean matches(String rawPassword, String encodedPassword) {
-		return passwordEncoder.matches(rawPassword, encodedPassword);
-	}
+    @Override
+    public boolean matches(String rawPassword, String encodedPassword) {
+        return passwordEncoder.matches(rawPassword, encodedPassword);
+    }
 }

@@ -1,14 +1,18 @@
 package org.efrenjm.investingtracker.infrastructure.persistence.entity.wallet;
 
-import lombok.*;
+import java.util.Map;
+import java.util.Set;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 import org.bson.types.ObjectId;
 import org.efrenjm.investingtracker.domain.model.wallet.WalletConfig;
 import org.efrenjm.investingtracker.domain.utils.CollectionTransformer;
 import org.efrenjm.investingtracker.infrastructure.persistence.utils.MongoUtils;
 import org.springframework.data.mongodb.core.mapping.Field;
-
-import java.util.Map;
-import java.util.Set;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -16,27 +20,33 @@ import java.util.Set;
 @Getter
 @Setter
 @ToString
-public class WalletConfigEntity
-{
-	@Field("rules") private Set<ObjectId> ruleEntities;
-	@Field("transaction_categories") private Map<String, TransactionSuperCategoryEntity> transactionCategories;
+public class WalletConfigEntity {
+    @Field("rules")
+    private Set<ObjectId> ruleEntities;
 
-	public static WalletConfigEntity fromDomain(WalletConfig config)
-	{
-		if (config == null)
-			return null;
+    @Field("transaction_categories")
+    private Map<String, TransactionSuperCategoryEntity> transactionCategories;
 
-		return WalletConfigEntity.builder()
-				.ruleEntities(MongoUtils.tryParseIds(config.getRules()))
-				.transactionCategories(CollectionTransformer.transformMapValues(config.getTransactionCategories(), TransactionSuperCategoryEntity::fromDomain))
-				.build();
-	}
+    public static WalletConfigEntity fromDomain(WalletConfig config) {
+        if (config == null) {
+            return null;
+        }
 
-	public WalletConfig toDomain()
-	{
-		return WalletConfig.builder()
-				.rules(MongoUtils.collectIds(ruleEntities))
-				.transactionCategories(CollectionTransformer.transformMapValues(transactionCategories, TransactionSuperCategoryEntity::toDomain))
-				.build();
-	}
+        return WalletConfigEntity.builder()
+                .ruleEntities(MongoUtils.tryParseIds(config.getRules()))
+                .transactionCategories(
+                        CollectionTransformer.transformMapValues(
+                                config.getTransactionCategories(),
+                                TransactionSuperCategoryEntity::fromDomain))
+                .build();
+    }
+
+    public WalletConfig toDomain() {
+        return WalletConfig.builder()
+                .rules(MongoUtils.collectIds(ruleEntities))
+                .transactionCategories(
+                        CollectionTransformer.transformMapValues(
+                                transactionCategories, TransactionSuperCategoryEntity::toDomain))
+                .build();
+    }
 }

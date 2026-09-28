@@ -3,56 +3,51 @@ package org.efrenjm.investingtracker.application.dto.controller.account_manageme
 import jakarta.validation.constraints.AssertFalse;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import java.util.List;
 import org.efrenjm.investingtracker.domain.model.account.AccountConfig;
 import org.efrenjm.investingtracker.domain.model.account.AccountType;
 
-import java.util.List;
-
 public class CreateAccountRequestDTO {
-	@NotNull
-	@NotBlank
-	private String name;
+    @NotNull @NotBlank private String name;
 
-	private String description;
+    private String description;
 
-	@NotBlank
-	@NotNull
-	private String type;
+    @NotBlank @NotNull private String type;
 
-	private Double available;
+    private Double available;
 
-	private List<String> tags;
+    private List<String> tags;
 
-	private AccountConfig config;
+    private AccountConfig config;
 
-	/* Debit */
-	private Double goal;
+    /* Debit */
+    private Double goal;
 
-	/* Assets */
-	private String asset;
+    /* Assets */
+    private String asset;
 
-	private Double currentPrice;
+    private Double currentPrice;
 
-	private Double averageCost;
+    private Double averageCost;
 
-	/* Credit */
-	private Double currentDebt;
+    /* Credit */
+    private Double currentDebt;
 
-	private Double creditLimit;
+    private Double creditLimit;
 
-	@AssertFalse(message = "Asset accounts must have an asset name, and an average cost")
-	public boolean isAssetPropertiesMissing() {
-		if (type.equals(AccountType.ASSET.getType())) {
-			return asset == null || averageCost == null;
-		}
-		return false;
-	}
+    @AssertFalse(message = "Asset accounts must have an asset name, and an average cost")
+    public boolean isAssetPropertiesMissing() {
+        if (type.equals(AccountType.ASSET.getType())) {
+            return asset == null || averageCost == null;
+        }
+        return false;
+    }
 
-	@AssertFalse(message = "Credit accounts must have a current debt")
-	public boolean isCreditPropertiesMissing() {
-		if (type.equals(AccountType.DEBIT.getType())) {
-			return currentDebt != null;
-		}
-		return false;
-	}
+    @AssertFalse(message = "Credit accounts must have a current debt")
+    public boolean isCreditPropertiesMissing() {
+        if (type.equals(AccountType.DEBIT.getType())) {
+            return currentDebt != null;
+        }
+        return false;
+    }
 }

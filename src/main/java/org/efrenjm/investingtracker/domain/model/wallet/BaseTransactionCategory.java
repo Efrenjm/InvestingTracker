@@ -12,9 +12,8 @@ import org.efrenjm.investingtracker.domain.model.AuditableModel;
 @Getter
 @Setter
 @ToString
-public abstract class BaseTransactionCategory extends AuditableModel
-{
-	public String description;
-	public String color;
-	public String icon;
+public abstract class BaseTransactionCategory extends AuditableModel {
+    public String description;
+    public String color;
+    public String icon;
 }

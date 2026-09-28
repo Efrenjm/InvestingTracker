@@ -12,45 +12,38 @@ import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 @Configuration
-public class RedisConfig
-{
-	@Bean
-	public ReactiveRedisTemplate<String, UserSession> profileCacheRedisTemplate(
-			ReactiveRedisConnectionFactory factory,
-			ObjectMapper objectMapper
-	)
-	{
-		Jackson2JsonRedisSerializer<UserSession> serializer =
-				new Jackson2JsonRedisSerializer<>(objectMapper, UserSession.class);
+public class RedisConfig {
+    @Bean
+    public ReactiveRedisTemplate<String, UserSession> profileCacheRedisTemplate(
+            ReactiveRedisConnectionFactory factory, ObjectMapper objectMapper) {
+        Jackson2JsonRedisSerializer<UserSession> serializer =
+                new Jackson2JsonRedisSerializer<>(objectMapper, UserSession.class);
 
-		RedisSerializationContext<String, UserSession> context =
-				RedisSerializationContext.<String, UserSession>newSerializationContext()
-						.key(StringRedisSerializer.UTF_8)
-						.value(serializer)
-						.hashKey(StringRedisSerializer.UTF_8)
-						.hashValue(serializer)
-						.build();
+        RedisSerializationContext<String, UserSession> context =
+                RedisSerializationContext.<String, UserSession>newSerializationContext()
+                        .key(StringRedisSerializer.UTF_8)
+                        .value(serializer)
+                        .hashKey(StringRedisSerializer.UTF_8)
+                        .hashValue(serializer)
+                        .build();
 
-		return new ReactiveRedisTemplate<>(factory, context);
-	}
+        return new ReactiveRedisTemplate<>(factory, context);
+    }
 
-	@Bean
-	public ReactiveRedisTemplate<String, SessionRecord> authSessionRedisTemplate(
-			ReactiveRedisConnectionFactory factory,
-			ObjectMapper objectMapper
-	)
-	{
-		Jackson2JsonRedisSerializer<SessionRecord> serializer =
-				new Jackson2JsonRedisSerializer<>(objectMapper, SessionRecord.class);
+    @Bean
+    public ReactiveRedisTemplate<String, SessionRecord> authSessionRedisTemplate(
+            ReactiveRedisConnectionFactory factory, ObjectMapper objectMapper) {
+        Jackson2JsonRedisSerializer<SessionRecord> serializer =
+                new Jackson2JsonRedisSerializer<>(objectMapper, SessionRecord.class);
 
-		RedisSerializationContext<String, SessionRecord> context =
-				RedisSerializationContext.<String, SessionRecord>newSerializationContext()
-						.key(StringRedisSerializer.UTF_8)
-						.value(serializer)
-						.hashKey(StringRedisSerializer.UTF_8)
-						.hashValue(serializer)
-						.build();
+        RedisSerializationContext<String, SessionRecord> context =
+                RedisSerializationContext.<String, SessionRecord>newSerializationContext()
+                        .key(StringRedisSerializer.UTF_8)
+                        .value(serializer)
+                        .hashKey(StringRedisSerializer.UTF_8)
+                        .hashValue(serializer)
+                        .build();
 
-		return new ReactiveRedisTemplate<>(factory, context);
-	}
+        return new ReactiveRedisTemplate<>(factory, context);
+    }
 }

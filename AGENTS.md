@@ -8,6 +8,7 @@ Applies throughout `backend`; a closer `AGENTS.md` overrides it within its subtr
 - Read the applicable guides below. Preserve public behavior unless the task changes it; avoid unrelated cleanup or migration.
 - Treat existing staged, unstaged, untracked and ignored files as user-owned. Never stage, unstage, commit, amend, reset, restore, push, change branches or modify remotes without explicit authorization.
 - Write repository documentation in English.
+- Before delivery, run the development guide's formatting and lint checks (`./gradlew formatCheck lint`). Use `./gradlew check` and explicit integration tests when behavior, build wiring or persistence changes warrant broader verification.
 
 ## Read by task
 

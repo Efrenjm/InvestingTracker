@@ -1,13 +1,22 @@
 package org.efrenjm.investingtracker.infrastructure.persistence.mongodb.projections;
 
-@SuppressWarnings("java:S100")
+import org.springframework.beans.factory.annotation.Value;
+
 public interface PublicProfileProjection {
-	String get_id();
-	String getUsername();
-	String getEmail();
-	String getPhoneNumber();
-	String getFirstName();
-	String getMiddleName();
-	String getLastName();
-	String getProfilePicture();
+    @Value("#{target['_id']}")
+    String getId();
+
+    String getUsername();
+
+    String getEmail();
+
+    String getPhoneNumber();
+
+    String getFirstName();
+
+    String getMiddleName();
+
+    String getLastName();
+
+    String getProfilePicture();
 }

@@ -1,5 +1,10 @@
 package org.efrenjm.investingtracker.interfaces.rest.controller.wallet_management;
 
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.util.List;
+import java.util.Set;
 import org.efrenjm.investingtracker.domain.dto.UserIdentity;
 import org.efrenjm.investingtracker.domain.dto.WalletSummary;
 import org.efrenjm.investingtracker.domain.model.wallet.Visibility;
@@ -19,131 +24,118 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
-import java.util.List;
-import java.util.Set;
-
-import static org.mockito.Mockito.*;
-
 @ExtendWith(MockitoExtension.class)
 class WalletManagementControllerTest {
 
-	@Mock
-	private WalletPort walletService;
+    @Mock private WalletPort walletService;
 
-	@Mock
-	private UserPort userService;
+    @Mock private UserPort userService;
 
-	@InjectMocks
-	private WalletManagementController controller;
+    @InjectMocks private WalletManagementController controller;
 
-	private UserIdentity user;
-	private Wallet wallet;
+    private UserIdentity user;
+    private Wallet wallet;
 
-	@BeforeEach
-	void setUp() {
-		user = new UserIdentity("user-123", Set.of());
-		wallet = Wallet.builder()
-				.id("wallet-1")
-				.name("My Wallet")
-				.description("Desc")
-				.visibility(Visibility.PRIVATE)
-				.build();
-	}
+    @BeforeEach
+    void setUp() {
+        user = new UserIdentity("user-123", Set.of());
+        wallet =
+                Wallet.builder()
+                        .id("wallet-1")
+                        .name("My Wallet")
+                        .description("Desc")
+                        .visibility(Visibility.PRIVATE)
+                        .build();
+    }
 
-	@Test
-	void getMyWallets_ReturnsUserWallets() {
-		WalletSummary summary = WalletSummary.builder()
-				.id("wallet-1")
-				.name("My Wallet")
-				.description("Desc")
-				.roles(List.of())
-				.build();
-		when(userService.getWallets(user)).thenReturn(Flux.just(summary));
+    @Test
+    void getMyWalletsReturnsUserWallets() {
+        WalletSummary summary =
+                WalletSummary.builder()
+                        .id("wallet-1")
+                        .name("My Wallet")
+                        .description("Desc")
+                        .roles(List.of())
+                        .build();
+        when(userService.getWallets(user)).thenReturn(Flux.just(summary));
 
-		Flux<WalletSummary> result = controller.getMyWallets(user);
+        Flux<WalletSummary> result = controller.getMyWallets(user);
 
-		StepVerifier.create(result)
-				.expectNext(summary)
-				.verifyComplete();
-	}
+        StepVerifier.create(result).expectNext(summary).verifyComplete();
+    }
 
-	@Test
-	void getPublicWallets_ReturnsPublicWallets() {
-		wallet.setVisibility(Visibility.PUBLIC);
-		when(walletService.getPublicWallets()).thenReturn(Flux.just(wallet));
+    @Test
+    void getPublicWalletsReturnsPublicWallets() {
+        wallet.setVisibility(Visibility.PUBLIC);
+        when(walletService.getPublicWallets()).thenReturn(Flux.just(wallet));
 
-		Flux<Wallet> result = controller.getPublicWallets();
+        Flux<Wallet> result = controller.getPublicWallets();
 
-		StepVerifier.create(result)
-				.expectNext(wallet)
-				.verifyComplete();
-	}
+        StepVerifier.create(result).expectNext(wallet).verifyComplete();
+    }
 
-	@Test
-	void getWallet_ReturnsWalletDetails() {
-		when(walletService.getWalletById(user, "wallet-1")).thenReturn(Mono.just(wallet));
+    @Test
+    void getWalletReturnsWalletDetails() {
+        when(walletService.getWalletById(user, "wallet-1")).thenReturn(Mono.just(wallet));
 
-		Mono<Wallet> result = controller.getWallet(user, "wallet-1");
+        Mono<Wallet> result = controller.getWallet(user, "wallet-1");
 
-		StepVerifier.create(result)
-				.expectNext(wallet)
-				.verifyComplete();
-	}
+        StepVerifier.create(result).expectNext(wallet).verifyComplete();
+    }
 
-	@Test
-	void createWallet_ValidRequest_CreatesWallet() {
-		CreateWalletRequest request = new CreateWalletRequest("My Wallet", "Desc", Visibility.PUBLIC);
-		when(walletService.createWallet(user, "My Wallet", "Desc", Visibility.PUBLIC)).thenReturn(Mono.just(wallet));
+    @Test
+    void createWalletValidRequestCreatesWallet() {
+        CreateWalletRequest request =
+                new CreateWalletRequest("My Wallet", "Desc", Visibility.PUBLIC);
+        when(walletService.createWallet(user, "My Wallet", "Desc", Visibility.PUBLIC))
+                .thenReturn(Mono.just(wallet));
 
-		Mono<Wallet> result = controller.createWallet(user, request);
+        Mono<Wallet> result = controller.createWallet(user, request);
 
-		StepVerifier.create(result)
-				.expectNext(wallet)
-				.verifyComplete();
-	}
+        StepVerifier.create(result).expectNext(wallet).verifyComplete();
+    }
 
-	@Test
-	void updateWallet_ValidRequest_UpdatesWallet() {
-		UpdateWalletRequest request = new UpdateWalletRequest("Updated Wallet", "Updated Desc", Visibility.PRIVATE);
-		when(walletService.updateWallet(user, "wallet-1", "Updated Wallet", "Updated Desc", Visibility.PRIVATE)).thenReturn(Mono.just(wallet));
+    @Test
+    void updateWalletValidRequestUpdatesWallet() {
+        UpdateWalletRequest request =
+                new UpdateWalletRequest("Updated Wallet", "Updated Desc", Visibility.PRIVATE);
+        when(walletService.updateWallet(
+                        user, "wallet-1", "Updated Wallet", "Updated Desc", Visibility.PRIVATE))
+                .thenReturn(Mono.just(wallet));
 
-		Mono<Wallet> result = controller.updateWallet(user, "wallet-1", request);
+        Mono<Wallet> result = controller.updateWallet(user, "wallet-1", request);
 
-		StepVerifier.create(result)
-				.expectNext(wallet)
-				.verifyComplete();
-	}
+        StepVerifier.create(result).expectNext(wallet).verifyComplete();
+    }
 
-	@Test
-	void deleteWallet_ValidRequest_DeletesWallet() {
-		when(walletService.deleteWallet(user, "wallet-1")).thenReturn(Mono.empty());
+    @Test
+    void deleteWalletValidRequestDeletesWallet() {
+        when(walletService.deleteWallet(user, "wallet-1")).thenReturn(Mono.empty());
 
-		Mono<Void> result = controller.deleteWallet(user, "wallet-1");
+        Mono<Void> result = controller.deleteWallet(user, "wallet-1");
 
-		StepVerifier.create(result)
-				.verifyComplete();
+        StepVerifier.create(result).verifyComplete();
 
-		verify(walletService).deleteWallet(user, "wallet-1");
-	}
+        verify(walletService).deleteWallet(user, "wallet-1");
+    }
 
-	@Test
-	void addMember_ValidRequest_AddsMember() {
-		AddMemberRequest request = new AddMemberRequest("user-456", "Manager");
-		when(walletService.addMember(user, "wallet-1", "user-456", "Manager")).thenReturn(Mono.empty());
+    @Test
+    void addMemberValidRequestAddsMember() {
+        AddMemberRequest request = new AddMemberRequest("user-456", "Manager");
+        when(walletService.addMember(user, "wallet-1", "user-456", "Manager"))
+                .thenReturn(Mono.empty());
 
-		Mono<Void> result = controller.addMember(user, "wallet-1", request);
+        Mono<Void> result = controller.addMember(user, "wallet-1", request);
 
-		StepVerifier.create(result)
-				.verifyComplete();
-	}
+        StepVerifier.create(result).verifyComplete();
+    }
 
-	@Test
-	void removeMember_ValidRequest_RemovesMember() {
-		when(walletService.removeMember(user, "wallet-1", "user-456")).thenReturn(Mono.empty());
+    @Test
+    void removeMemberValidRequestRemovesMember() {
+        when(walletService.removeMember(user, "wallet-1", "user-456")).thenReturn(Mono.empty());
 
-		Mono<Void> result = controller.removeMember(user, "wallet-1", "user-456");
+        Mono<Void> result = controller.removeMember(user, "wallet-1", "user-456");
 
-		StepVerifier.create(result)
-				.verifyComplete();
-	}
+        StepVerifier.create(result).verifyComplete();
+    }
 }

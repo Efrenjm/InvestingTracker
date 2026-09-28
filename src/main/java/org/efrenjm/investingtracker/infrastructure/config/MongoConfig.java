@@ -12,29 +12,30 @@ import org.springframework.data.mongodb.config.AbstractReactiveMongoConfiguratio
 @Configuration
 public class MongoConfig extends AbstractReactiveMongoConfiguration {
 
-	private final MongoClient mongoClient;
+    private final MongoClient mongoClient;
 
-	@Value("${spring.data.mongodb.database}")
-	private String databaseName;
+    @Value("${spring.data.mongodb.database}")
+    private String databaseName;
 
-	public MongoConfig(MongoClient mongoClient) {
-		this.mongoClient = mongoClient;
-	}
+    public MongoConfig(MongoClient mongoClient) {
+        this.mongoClient = mongoClient;
+    }
 
-	@Override
-	@NonNull
-	public MongoClient reactiveMongoClient() {
-		return mongoClient;
-	}
+    @Override
+    @NonNull
+    public MongoClient reactiveMongoClient() {
+        return mongoClient;
+    }
 
-	@Override
-	@NonNull
-	protected String getDatabaseName() {
-		return databaseName;
-	}
+    @Override
+    @NonNull
+    protected String getDatabaseName() {
+        return databaseName;
+    }
 
-	@Bean
-	public ReactiveMongoTransactionManager transactionManager(ReactiveMongoDatabaseFactory factory) {
-		return new ReactiveMongoTransactionManager(factory);
-	}
+    @Bean
+    public ReactiveMongoTransactionManager transactionManager(
+            ReactiveMongoDatabaseFactory factory) {
+        return new ReactiveMongoTransactionManager(factory);
+    }
 }

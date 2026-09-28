@@ -1,7 +1,15 @@
 package org.efrenjm.investingtracker.infrastructure.persistence.entity.user;
 
-import lombok.*;
-
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Optional;
+import java.util.Set;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 import org.bson.types.ObjectId;
 import org.efrenjm.investingtracker.domain.model.user.CodeUsage;
@@ -14,8 +22,6 @@ import org.efrenjm.investingtracker.infrastructure.persistence.utils.MongoUtils;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
-import java.util.*;
-
 @AllArgsConstructor
 @NoArgsConstructor
 @SuperBuilder
@@ -23,30 +29,62 @@ import java.util.*;
 @Setter
 @ToString
 @Document(collection = "users")
-public class UserEntity extends BaseMongoEntity
-{
-    @Field("username") private String username;
-    @Field("email") private String email;
-    @Field("phone_number") private String phoneNumber;
-    @Field("password") private String password;
-    @Field("active") private boolean active;
-    @Field("verification_request") private EntityVerificationRequest verificationRequest;
-    @Field("roles") private Set<SystemRole> roles;
-    @Field("first_name") private String firstName;
-    @Field("middle_name") private String middleName;
-    @Field("last_name") private String lastName;
-    @Field("profile_picture") private String profilePicture;
-    @Field("wallets") private Set<ObjectId> wallets;
-    @Field("friends") private Set<ObjectId> friends;
-    @Field("pending_friends") private Set<ObjectId> pendingFriends;
-    @Field("invited_friends") private Set<ObjectId> invitedFriends;
-    @Field("preferences") private UserEntityPreferences preferences;
-    @Field("last_login") private Date lastLogin;
+public class UserEntity extends BaseMongoEntity {
+    @Field("username")
+    private String username;
 
-    public static UserEntity fromDomain(User user)
-    {
-        if (user == null)
+    @Field("email")
+    private String email;
+
+    @Field("phone_number")
+    private String phoneNumber;
+
+    @Field("password")
+    private String password;
+
+    @Field("active")
+    private boolean active;
+
+    @Field("verification_request")
+    private EntityVerificationRequest verificationRequest;
+
+    @Field("roles")
+    private Set<SystemRole> roles;
+
+    @Field("first_name")
+    private String firstName;
+
+    @Field("middle_name")
+    private String middleName;
+
+    @Field("last_name")
+    private String lastName;
+
+    @Field("profile_picture")
+    private String profilePicture;
+
+    @Field("wallets")
+    private Set<ObjectId> wallets;
+
+    @Field("friends")
+    private Set<ObjectId> friends;
+
+    @Field("pending_friends")
+    private Set<ObjectId> pendingFriends;
+
+    @Field("invited_friends")
+    private Set<ObjectId> invitedFriends;
+
+    @Field("preferences")
+    private UserEntityPreferences preferences;
+
+    @Field("last_login")
+    private Date lastLogin;
+
+    public static UserEntity fromDomain(User user) {
+        if (user == null) {
             return null;
+        }
 
         return populateBaseEntityFields(UserEntity.builder(), user)
                 .username(user.getUsername())
@@ -54,7 +92,9 @@ public class UserEntity extends BaseMongoEntity
                 .phoneNumber(user.getPhoneNumber())
                 .password(user.getPassword())
                 .active(user.isActive())
-                .verificationRequest(EntityVerificationRequest.fromDomain(user.getVerificationRequest().orElse(null)))
+                .verificationRequest(
+                        EntityVerificationRequest.fromDomain(
+                                user.getVerificationRequest().orElse(null)))
                 .roles(user.getRoles())
                 .firstName(user.getFirstName())
                 .middleName(user.getMiddleName())
@@ -69,17 +109,17 @@ public class UserEntity extends BaseMongoEntity
                 .build();
     }
 
-    public User toDomain()
-    {
+    public User toDomain() {
         return populateBaseDomainFields(User.builder())
                 .username(username)
                 .email(email)
                 .phoneNumber(phoneNumber)
                 .password(password)
                 .active(active)
-                .verificationRequest(Optional.ofNullable(verificationRequest)
-                        .map(EntityVerificationRequest::toDomain)
-                        .orElse(null))
+                .verificationRequest(
+                        Optional.ofNullable(verificationRequest)
+                                .map(EntityVerificationRequest::toDomain)
+                                .orElse(null))
                 .roles(Optional.ofNullable(roles).orElse(new HashSet<>()))
                 .firstName(firstName)
                 .middleName(middleName)
@@ -89,9 +129,10 @@ public class UserEntity extends BaseMongoEntity
                 .friends(MongoUtils.collectIds(friends))
                 .pendingFriends(MongoUtils.collectIds(pendingFriends))
                 .invitedFriends(MongoUtils.collectIds(invitedFriends))
-                .preferences(Optional.ofNullable(preferences)
-                        .map(UserEntityPreferences::toDomain)
-                        .orElse(null))
+                .preferences(
+                        Optional.ofNullable(preferences)
+                                .map(UserEntityPreferences::toDomain)
+                                .orElse(null))
                 .lastLogin(lastLogin)
                 .build();
     }
@@ -102,18 +143,26 @@ public class UserEntity extends BaseMongoEntity
     @Getter
     @Setter
     @ToString
-    public static class EntityVerificationRequest
-    {
-        @Field("verification_code") private String code;
-        @Field("code_usage") private CodeUsage codeUsage;
-        @Field("credential") private String credential;
-        @Field("expiration_date") private Date expiration;
-        @Field("refresh_pause") private Date refreshPause;
+    public static class EntityVerificationRequest {
+        @Field("verification_code")
+        private String code;
 
-        public static EntityVerificationRequest fromDomain(VerificationRequest request)
-        {
-            if (request == null)
+        @Field("code_usage")
+        private CodeUsage codeUsage;
+
+        @Field("credential")
+        private String credential;
+
+        @Field("expiration_date")
+        private Date expiration;
+
+        @Field("refresh_pause")
+        private Date refreshPause;
+
+        public static EntityVerificationRequest fromDomain(VerificationRequest request) {
+            if (request == null) {
                 return null;
+            }
 
             return EntityVerificationRequest.builder()
                     .code(request.getCode())
@@ -124,8 +173,7 @@ public class UserEntity extends BaseMongoEntity
                     .build();
         }
 
-        public VerificationRequest toDomain()
-        {
+        public VerificationRequest toDomain() {
             return VerificationRequest.builder()
                     .code(code)
                     .codeUsage(codeUsage)
@@ -142,17 +190,23 @@ public class UserEntity extends BaseMongoEntity
     @Getter
     @Setter
     @ToString
-    public static class UserEntityPreferences
-    {
-        @Field("is_email_public") private boolean isEmailPublic;
-        @Field("is_phone_public") private boolean isPhonePublic;
-        @Field("is_name_public") private boolean isNamePublic;
-        @Field("is_profile_public") private boolean isProfilePublic;
+    public static class UserEntityPreferences {
+        @Field("is_email_public")
+        private boolean isEmailPublic;
 
-        public static UserEntityPreferences fromDomain(UserPreferences preferences)
-        {
-            if (preferences == null)
+        @Field("is_phone_public")
+        private boolean isPhonePublic;
+
+        @Field("is_name_public")
+        private boolean isNamePublic;
+
+        @Field("is_profile_public")
+        private boolean isProfilePublic;
+
+        public static UserEntityPreferences fromDomain(UserPreferences preferences) {
+            if (preferences == null) {
                 return null;
+            }
 
             return UserEntityPreferences.builder()
                     .isEmailPublic(preferences.isEmailPublic())
@@ -162,8 +216,7 @@ public class UserEntity extends BaseMongoEntity
                     .build();
         }
 
-        public UserPreferences toDomain()
-        {
+        public UserPreferences toDomain() {
             return UserPreferences.builder()
                     .isEmailPublic(isEmailPublic)
                     .isNamePublic(isNamePublic)

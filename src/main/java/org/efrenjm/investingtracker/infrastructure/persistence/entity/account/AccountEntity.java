@@ -1,16 +1,26 @@
 package org.efrenjm.investingtracker.infrastructure.persistence.entity.account;
 
-import lombok.*;
+import java.util.Optional;
+import java.util.Set;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 import org.bson.types.ObjectId;
-import org.efrenjm.investingtracker.domain.model.account.*;
+import org.efrenjm.investingtracker.domain.model.account.AccountConfig;
+import org.efrenjm.investingtracker.domain.model.account.AccountType;
+import org.efrenjm.investingtracker.domain.model.account.AssetAccount;
+import org.efrenjm.investingtracker.domain.model.account.BaseAccount;
+import org.efrenjm.investingtracker.domain.model.account.CreditAccount;
+import org.efrenjm.investingtracker.domain.model.account.DebitAccount;
 import org.efrenjm.investingtracker.infrastructure.persistence.entity.AuditableMongoEntity;
 import org.efrenjm.investingtracker.infrastructure.persistence.entity.account.exception.NonSupportedAccountTypeException;
 import org.efrenjm.investingtracker.infrastructure.persistence.utils.MongoUtils;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
-
-import java.util.*;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -19,164 +29,198 @@ import java.util.*;
 @SuperBuilder
 @ToString
 @Document(collection = "accounts")
-public class AccountEntity extends AuditableMongoEntity
-{
-	@Field("name") private String name;
-	@Field("description") private String description;
-	@Field("wallet_id") private ObjectId walletId;
-	@Field("sharing_wallets") private Set<ObjectId> sharingWallets;
-	@Field("type") private AccountType type;
-	@Field("available") private Double available;
-	@Field("tags") private Set<String> tags;
-	@Field("account_config") private EntityAccountConfig accountConfig;
-	@Field("rules") private Set<ObjectId> rules;
+public class AccountEntity extends AuditableMongoEntity {
+    @Field("name")
+    private String name;
 
-	/* Debit */
-	@Field("goal") private Double goal;
+    @Field("description")
+    private String description;
 
-	/* Assets */
-	@Field("asset") private String asset;
-	@Field("current_price") private Double currentPrice;
-	@Field("average_cost") private Double averageCost;
+    @Field("wallet_id")
+    private ObjectId walletId;
 
-	/* Credit */
-	@Field("current_debt") private Double currentDebt;
-	@Field("credit_limit") private Double creditLimit;
+    @Field("sharing_wallets")
+    private Set<ObjectId> sharingWallets;
 
-	public static AccountEntity fromDomain(BaseAccount account)
-	{
-		if (account == null)
-			return null;
+    @Field("type")
+    private AccountType type;
 
-		return switch (account.getType())
-		{
-			case DEBIT -> fromDomain((DebitAccount) account);
-			case CREDIT -> fromDomain((CreditAccount) account);
-			case ASSET -> fromDomain((AssetAccount) account);
-			default -> throw new NonSupportedAccountTypeException(account.getType().getType());
-		};
-	}
+    @Field("available")
+    private Double available;
 
-	public static AccountEntity fromDomain(DebitAccount account)
-	{
-		if (account == null)
-			return null;
+    @Field("tags")
+    private Set<String> tags;
 
-		return buildBase(account)
-				.goal(account.getGoal())
-				.build();
-	}
+    @Field("account_config")
+    private EntityAccountConfig accountConfig;
 
-	public static AccountEntity fromDomain(CreditAccount account)
-	{
-		if (account == null)
-			return null;
+    @Field("rules")
+    private Set<ObjectId> rules;
 
-		return buildBase(account)
-				.currentDebt(account.getCurrentDebt())
-				.creditLimit(account.getCreditLimit())
-				.build();
-	}
+    /* Debit */
+    @Field("goal")
+    private Double goal;
 
-	public static AccountEntity fromDomain(AssetAccount account)
-	{
-		if (account == null)
-			return null;
+    /* Assets */
+    @Field("asset")
+    private String asset;
 
-		return buildBase(account)
-				.asset(account.getAsset())
-				.currentPrice(account.getCurrentPrice())
-				.averageCost(account.getAverageCost())
-				.goal(account.getGoal())
-				.build();
-	}
+    @Field("current_price")
+    private Double currentPrice;
 
-	public BaseAccount toDomain()
-	{
-		BaseAccount.BaseAccountBuilder<?, ?> builder = switch (type)
-		{
-			case DEBIT -> DebitAccount.builder()
-					.goal(goal);
-			case CREDIT -> CreditAccount.builder()
-					.currentDebt(currentDebt)
-					.creditLimit(creditLimit);
-			case ASSET -> AssetAccount.builder()
-					.asset(asset)
-					.currentPrice(currentPrice)
-					.averageCost(averageCost)
-					.goal(goal);
-			default -> throw new NonSupportedAccountTypeException(type.getType());
-		};
+    @Field("average_cost")
+    private Double averageCost;
 
-		builder
-				.name(name)
-				.description(description)
-				.walletId(walletId.toHexString())
-				.sharingWallets(MongoUtils.collectIds(sharingWallets))
-				.type(type)
-				.available(available)
-				.tags(tags)
-				.accountConfig(Optional.ofNullable(accountConfig).map(EntityAccountConfig::toDomain).orElse(null))
-				.rules(MongoUtils.collectIds(rules));
-		return populateAuditableDomainFields(builder).build();
-	}
+    /* Credit */
+    @Field("current_debt")
+    private Double currentDebt;
 
-	private static AccountEntity.AccountEntityBuilder<?, ?> buildBase(BaseAccount account)
-	{
-		AccountEntity.AccountEntityBuilder<?, ?> builder = AccountEntity.builder()
-				.name(account.getName())
-				.description(account.getDescription())
-				.walletId(MongoUtils.idToEntity(account.getWalletId()))
-				.sharingWallets(MongoUtils.tryParseIds(account.getSharingWallets().orElse(Set.of())))
-				.type(account.getType())
-				.available(account.getAvailable())
-				.tags(account.getTags().orElse(Set.of()))
-				.accountConfig(EntityAccountConfig.fromDomain(account.getAccountConfig()))
-				.rules(MongoUtils.tryParseIds(account.getRules().orElse(Set.of())));
+    @Field("credit_limit")
+    private Double creditLimit;
 
-		return populateAuditableEntityFields(builder, account);
-	}
+    public static AccountEntity fromDomain(BaseAccount account) {
+        if (account == null) {
+            return null;
+        }
 
-	@AllArgsConstructor
-	@Builder
-	@Getter
-	@Setter
-	@ToString
-	public static class EntityAccountConfig
-	{
-		@Field("color") private String color;
-		@Field("icon") private String icon;
-		@Field("visible") private Boolean visible;
-		@Field("image") private String image;
-		@Field("included_in_net_sum") private Boolean includedInNetSum;
-		@Field("group") private String group;
+        return switch (account.getType()) {
+            case DEBIT -> fromDomain((DebitAccount) account);
+            case CREDIT -> fromDomain((CreditAccount) account);
+            case ASSET -> fromDomain((AssetAccount) account);
+            default -> throw new NonSupportedAccountTypeException(account.getType().getType());
+        };
+    }
 
-		public static EntityAccountConfig fromDomain(AccountConfig config)
-		{
-			if (config == null)
-				return null;
+    public static AccountEntity fromDomain(DebitAccount account) {
+        if (account == null) {
+            return null;
+        }
 
-			return EntityAccountConfig.builder()
-					.color(config.getColor())
-					.icon(config.getIcon())
-					.visible(config.getVisible())
-					.image(config.getImage())
-					.includedInNetSum(config.getIncludedInNetSum())
-					.group(config.getGroup())
-					.build();
-		}
+        return buildBase(account).goal(account.getGoal()).build();
+    }
 
-		public AccountConfig toDomain()
-		{
-			return AccountConfig.builder()
-					.color(color)
-					.icon(icon)
-					.visible(visible)
-					.image(image)
-					.includedInNetSum(includedInNetSum)
-					.group(group)
-					.build();
-		}
-	}
+    public static AccountEntity fromDomain(CreditAccount account) {
+        if (account == null) {
+            return null;
+        }
+
+        return buildBase(account)
+                .currentDebt(account.getCurrentDebt())
+                .creditLimit(account.getCreditLimit())
+                .build();
+    }
+
+    public static AccountEntity fromDomain(AssetAccount account) {
+        if (account == null) {
+            return null;
+        }
+
+        return buildBase(account)
+                .asset(account.getAsset())
+                .currentPrice(account.getCurrentPrice())
+                .averageCost(account.getAverageCost())
+                .goal(account.getGoal())
+                .build();
+    }
+
+    public BaseAccount toDomain() {
+        BaseAccount.BaseAccountBuilder<?, ?> builder =
+                switch (type) {
+                    case DEBIT -> DebitAccount.builder().goal(goal);
+                    case CREDIT ->
+                            CreditAccount.builder()
+                                    .currentDebt(currentDebt)
+                                    .creditLimit(creditLimit);
+                    case ASSET ->
+                            AssetAccount.builder()
+                                    .asset(asset)
+                                    .currentPrice(currentPrice)
+                                    .averageCost(averageCost)
+                                    .goal(goal);
+                    default -> throw new NonSupportedAccountTypeException(type.getType());
+                };
+
+        builder.name(name)
+                .description(description)
+                .walletId(walletId.toHexString())
+                .sharingWallets(MongoUtils.collectIds(sharingWallets))
+                .type(type)
+                .available(available)
+                .tags(tags)
+                .accountConfig(
+                        Optional.ofNullable(accountConfig)
+                                .map(EntityAccountConfig::toDomain)
+                                .orElse(null))
+                .rules(MongoUtils.collectIds(rules));
+        return populateAuditableDomainFields(builder).build();
+    }
+
+    private static AccountEntity.AccountEntityBuilder<?, ?> buildBase(BaseAccount account) {
+        AccountEntity.AccountEntityBuilder<?, ?> builder =
+                AccountEntity.builder()
+                        .name(account.getName())
+                        .description(account.getDescription())
+                        .walletId(MongoUtils.idToEntity(account.getWalletId()))
+                        .sharingWallets(
+                                MongoUtils.tryParseIds(
+                                        account.getSharingWallets().orElse(Set.of())))
+                        .type(account.getType())
+                        .available(account.getAvailable())
+                        .tags(account.getTags().orElse(Set.of()))
+                        .accountConfig(EntityAccountConfig.fromDomain(account.getAccountConfig()))
+                        .rules(MongoUtils.tryParseIds(account.getRules().orElse(Set.of())));
+
+        return populateAuditableEntityFields(builder, account);
+    }
+
+    @AllArgsConstructor
+    @Builder
+    @Getter
+    @Setter
+    @ToString
+    public static class EntityAccountConfig {
+        @Field("color")
+        private String color;
+
+        @Field("icon")
+        private String icon;
+
+        @Field("visible")
+        private Boolean visible;
+
+        @Field("image")
+        private String image;
+
+        @Field("included_in_net_sum")
+        private Boolean includedInNetSum;
+
+        @Field("group")
+        private String group;
+
+        public static EntityAccountConfig fromDomain(AccountConfig config) {
+            if (config == null) {
+                return null;
+            }
+
+            return EntityAccountConfig.builder()
+                    .color(config.getColor())
+                    .icon(config.getIcon())
+                    .visible(config.getVisible())
+                    .image(config.getImage())
+                    .includedInNetSum(config.getIncludedInNetSum())
+                    .group(config.getGroup())
+                    .build();
+        }
+
+        public AccountConfig toDomain() {
+            return AccountConfig.builder()
+                    .color(color)
+                    .icon(icon)
+                    .visible(visible)
+                    .image(image)
+                    .includedInNetSum(includedInNetSum)
+                    .group(group)
+                    .build();
+        }
+    }
 }
-

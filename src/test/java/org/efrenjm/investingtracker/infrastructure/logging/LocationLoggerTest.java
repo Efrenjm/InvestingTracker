@@ -1,16 +1,18 @@
 package org.efrenjm.investingtracker.infrastructure.logging;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
+
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.PatternLayout;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import net.logstash.logback.encoder.LogstashEncoder;
 import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
-import net.logstash.logback.encoder.LogstashEncoder;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 class LocationLoggerTest {
     @Test
@@ -31,8 +33,10 @@ class LocationLoggerTest {
             layout.start();
             assertEquals(2, events.list.size());
             for (ILoggingEvent event : events.list) {
-                assertEquals("INFO | auth | LocationLoggerTest | a7k2m9x4p | Verification email requested"
-                        + System.lineSeparator(), layout.doLayout(event));
+                assertEquals(
+                        "INFO | auth | LocationLoggerTest | a7k2m9x4p | Verification email requested"
+                                + System.lineSeparator(),
+                        layout.doLayout(event));
                 assertEquals(LocationLoggerTest.class.getName(), event.getLoggerName());
             }
             LogstashEncoder jsonEncoder = new LogstashEncoder();
@@ -58,14 +62,17 @@ class LocationLoggerTest {
     @Test
     void rejectsInvalidLocationCodes() {
         LocationLogger logger = LocationLogger.forClass(LocationLoggerTest.class, "auth");
-        for (String invalid : new String[]{"AUTH-001", "ABC123XYZ", "short", "1234567890"}) {
+        for (String invalid : new String[] {"AUTH-001", "ABC123XYZ", "short", "1234567890"}) {
             assertThrows(IllegalArgumentException.class, () -> logger.info(invalid, "Message"));
         }
     }
 
     @Test
     void leavesLegacyLoggerOutputUnchanged() {
-        Logger underlying = (Logger) LoggerFactory.getLogger("org.efrenjm.investingtracker.example.LegacyService");
+        Logger underlying =
+                (Logger)
+                        LoggerFactory.getLogger(
+                                "org.efrenjm.investingtracker.example.LegacyService");
         ListAppender<ILoggingEvent> events = new ListAppender<>();
         events.start();
         underlying.addAppender(events);
@@ -75,7 +82,8 @@ class LocationLoggerTest {
             original.setContext(underlying.getLoggerContext());
             original.setPattern("%logger{36}");
             original.start();
-            assertEquals(original.doLayout(events.list.getFirst()),
+            assertEquals(
+                    original.doLayout(events.list.getFirst()),
                     new LogOriginConverter().convert(events.list.getFirst()));
             original.stop();
         } finally {

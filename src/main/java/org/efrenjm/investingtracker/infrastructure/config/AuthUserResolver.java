@@ -16,65 +16,57 @@ import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 @RequiredArgsConstructor
-public class AuthUserResolver implements HandlerMethodArgumentResolver
-{
-	private final UserLookupUseCase userLookupUseCase;
+public class AuthUserResolver implements HandlerMethodArgumentResolver {
+    private final UserLookupUseCase userLookupUseCase;
 
-	@Override
-	public boolean supportsParameter(MethodParameter parameter)
-	{
-		return parameter.hasParameterAnnotation(AuthUser.class);
-	}
+    @Override
+    public boolean supportsParameter(MethodParameter parameter) {
+        return parameter.hasParameterAnnotation(AuthUser.class);
+    }
 
-	@Override
-	@NonNull
-	public Mono<Object> resolveArgument(@NonNull MethodParameter parameter,
-	                                    @NonNull BindingContext bindingContext,
-	                                    ServerWebExchange exchange)
-	{
-		UserIdentity user = exchange.getAttribute("authUser");
-		if (user == null)
-		{
-			return Mono.empty();
-		}
+    @Override
+    @NonNull
+    public Mono<Object> resolveArgument(
+            @NonNull MethodParameter parameter,
+            @NonNull BindingContext bindingContext,
+            ServerWebExchange exchange) {
+        UserIdentity user = exchange.getAttribute("authUser");
+        if (user == null) {
+            return Mono.empty();
+        }
 
-		Class<?> paramType = parameter.getParameterType();
-		if (paramType.equals(UserIdentity.class))
-		{
-			return Mono.just(user);
-		}
-		else if (paramType.equals(Profile.class))
-		{
-			return getProfile(user.id()).cast(Object.class);
-		}
-		else if (paramType.equals(User.class))
-		{
-			return getUser(user.id()).cast(Object.class);
-		}
-		else
-		{
-			return Mono.error(new ResponseStatusException(
-					HttpStatus.BAD_REQUEST,
-					"Unsupported parameter type for @AuthUser: " + paramType.getSimpleName()
-			));
-		}
-	}
+        Class<?> paramType = parameter.getParameterType();
+        if (paramType.equals(UserIdentity.class)) {
+            return Mono.just(user);
+        } else if (paramType.equals(Profile.class)) {
+            return getProfile(user.id()).cast(Object.class);
+        } else if (paramType.equals(User.class)) {
+            return getUser(user.id()).cast(Object.class);
+        } else {
+            return Mono.error(
+                    new ResponseStatusException(
+                            HttpStatus.BAD_REQUEST,
+                            "Unsupported parameter type for @AuthUser: "
+                                    + paramType.getSimpleName()));
+        }
+    }
 
-	private Mono<Profile> getProfile(String userId)
-	{
-		return userLookupUseCase.loadProfileByUserId(userId)
-				.switchIfEmpty(Mono.error(new ResponseStatusException(
-						HttpStatus.NOT_FOUND,
-						"Profile not found for user ID: " + userId
-				)));
-	}
+    private Mono<Profile> getProfile(String userId) {
+        return userLookupUseCase
+                .loadProfileByUserId(userId)
+                .switchIfEmpty(
+                        Mono.error(
+                                new ResponseStatusException(
+                                        HttpStatus.NOT_FOUND,
+                                        "Profile not found for user ID: " + userId)));
+    }
 
-	private Mono<User> getUser(String userId)
-	{
-		return userLookupUseCase.loadUserByUserId(userId)
-				.switchIfEmpty(Mono.error(new ResponseStatusException(
-						HttpStatus.NOT_FOUND,
-						"User not found for ID: " + userId
-				)));
-	}
+    private Mono<User> getUser(String userId) {
+        return userLookupUseCase
+                .loadUserByUserId(userId)
+                .switchIfEmpty(
+                        Mono.error(
+                                new ResponseStatusException(
+                                        HttpStatus.NOT_FOUND, "User not found for ID: " + userId)));
+    }
 }

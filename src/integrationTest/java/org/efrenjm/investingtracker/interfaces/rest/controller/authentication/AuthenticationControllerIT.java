@@ -1,5 +1,10 @@
 package org.efrenjm.investingtracker.interfaces.rest.controller.authentication;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import org.efrenjm.investingtracker.integration.IntegrationTestBase;
 import org.efrenjm.investingtracker.integration.MailpitClient;
 import org.junit.jupiter.api.BeforeEach;
@@ -11,28 +16,23 @@ import org.springframework.http.ResponseCookie;
 import org.springframework.test.web.reactive.server.EntityExchangeResult;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 /**
  * Integration tests for the /auth endpoint.
  *
- * Covered flow:
- *   1. POST /auth/register     -> creates user and sends verification email
- *   2. MailpitClient           -> reads the email and extracts the code
- *   3. POST /auth/verify-code  -> activates the account with the code
- *   4. POST /auth/login        -> returns JWT in cookie
- *   5. GET  /auth/refresh-code -> enforces cooldown before re-sending code
+ * <p>Covered flow: 1. POST /auth/register -> creates user and sends verification email 2.
+ * MailpitClient -> reads the email and extracts the code 3. POST /auth/verify-code -> activates the
+ * account with the code 4. POST /auth/login -> returns JWT in cookie 5. GET /auth/refresh-code ->
+ * enforces cooldown before re-sending code
  */
 @DisplayName("Authentication Controller - Integration Tests")
 class AuthenticationControllerIT extends IntegrationTestBase {
 
-    @Autowired
-    private WebTestClient webTestClient;
+    @Autowired private WebTestClient webTestClient;
 
     private MailpitClient mailpit;
 
     private static final String PASSWORD = "Password1@";
-    private static final String BASE     = "/auth";
+    private static final String BASE = "/auth";
 
     @BeforeEach
     void setUp() throws Exception {
@@ -52,52 +52,67 @@ class AuthenticationControllerIT extends IntegrationTestBase {
 
     @Test
     @DisplayName("register - valid credentials return 201 with userId")
-    void register_ValidCredentials_Returns201() {
+    void registerValidCredentialsReturns201() {
         String email = uniqueEmail();
-        webTestClient.post()
+        webTestClient
+                .post()
                 .uri(BASE + "/register")
                 .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue("""
+                .bodyValue(
+                        """
                         {"username": "%s", "password": "%s", "confirmPassword": "%s"}
-                        """.formatted(email, PASSWORD, PASSWORD))
+                        """
+                                .formatted(email, PASSWORD, PASSWORD))
                 .exchange()
-                .expectStatus().isCreated()
+                .expectStatus()
+                .isCreated()
                 .expectBody()
-                .jsonPath("$.userId").isNotEmpty()
-                .jsonPath("$.username").isEqualTo(email);
+                .jsonPath("$.userId")
+                .isNotEmpty()
+                .jsonPath("$.username")
+                .isEqualTo(email);
     }
 
     @Test
     @DisplayName("register - active duplicate email returns generic success")
-    void register_DuplicateEmail_ReturnsGenericSuccess() {
+    void registerDuplicateEmailReturnsGenericSuccess() {
         String email = uniqueEmail();
         // First time: register and verify
         registerAndVerify(email);
 
         // Second time with the same email
-        webTestClient.post()
+        webTestClient
+                .post()
                 .uri(BASE + "/register")
                 .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue("""
+                .bodyValue(
+                        """
                         {"username": "%s", "password": "%s", "confirmPassword": "%s"}
-                        """.formatted(email, PASSWORD, PASSWORD))
+                        """
+                                .formatted(email, PASSWORD, PASSWORD))
                 .exchange()
-                .expectStatus().isCreated()
+                .expectStatus()
+                .isCreated()
                 .expectBody()
-                .jsonPath("$.message").isEqualTo("You’re almost there! Check your inbox for the next steps.");
+                .jsonPath("$.message")
+                .isEqualTo("You’re almost there! Check your inbox for the next steps.");
     }
 
     @Test
     @DisplayName("register - invalid password returns 400")
-    void register_InvalidPassword_Returns400() {
-        webTestClient.post()
+    void registerInvalidPasswordReturns400() {
+        webTestClient
+                .post()
                 .uri(BASE + "/register")
                 .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue("""
+                .bodyValue(
+                        """
                         {"username": "%s", "password": "weak", "confirmPassword": "weak"}
-                        """.formatted(uniqueEmail()))
+                        """
+                                .formatted(uniqueEmail()))
                 .exchange()
-                .expectStatus().isBadRequest();
+                .expectStatus()
+                .isBadRequest();
     }
 
     // -------------------------------------------------------------------------
@@ -106,7 +121,7 @@ class AuthenticationControllerIT extends IntegrationTestBase {
 
     @Test
     @DisplayName("verify-code - valid code activates account without creating a session")
-    void verifyCode_ValidCode_Returns200() throws Exception {
+    void verifyCodeValidCodeReturns200() throws Exception {
         String email = uniqueEmail();
         // 1. Register
         String userId = doRegister(email);
@@ -116,32 +131,42 @@ class AuthenticationControllerIT extends IntegrationTestBase {
         String code = mailpit.extractVerificationCode(emailBody);
 
         // 3. Verify
-        webTestClient.post()
+        webTestClient
+                .post()
                 .uri(BASE + "/verify-code")
                 .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue("""
+                .bodyValue(
+                        """
                         {"userId": "%s", "code": "%s"}
-                        """.formatted(userId, code))
+                        """
+                                .formatted(userId, code))
                 .exchange()
-                .expectStatus().isCreated()
-                .expectHeader().doesNotExist("Set-Cookie")
+                .expectStatus()
+                .isCreated()
+                .expectHeader()
+                .doesNotExist("Set-Cookie")
                 .expectBody()
-                .jsonPath("$.userId").isEqualTo(userId);
+                .jsonPath("$.userId")
+                .isEqualTo(userId);
     }
 
     @Test
     @DisplayName("verify-code - wrong code returns 4xx")
-    void verifyCode_WrongCode_Returns4xx() throws Exception {
+    void verifyCodeWrongCodeReturns4xx() throws Exception {
         String userId = doRegister(uniqueEmail());
 
-        webTestClient.post()
+        webTestClient
+                .post()
                 .uri(BASE + "/verify-code")
                 .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue("""
+                .bodyValue(
+                        """
                         {"userId": "%s", "code": "000000"}
-                        """.formatted(userId))
+                        """
+                                .formatted(userId))
                 .exchange()
-                .expectStatus().is4xxClientError();
+                .expectStatus()
+                .is4xxClientError();
     }
 
     // -------------------------------------------------------------------------
@@ -150,24 +175,29 @@ class AuthenticationControllerIT extends IntegrationTestBase {
 
     @Test
     @DisplayName("login - active account returns 200 with JWT cookie")
-    void login_ActiveAccount_Returns200WithCookie() {
+    void loginActiveAccountReturns200WithCookie() {
         String email = uniqueEmail();
         registerAndVerify(email);
 
-        webTestClient.post()
+        webTestClient
+                .post()
                 .uri(BASE + "/login")
                 .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue("""
+                .bodyValue(
+                        """
                         {"username": "%s", "password": "%s"}
-                        """.formatted(email, PASSWORD))
+                        """
+                                .formatted(email, PASSWORD))
                 .exchange()
-                .expectStatus().isOk()
-                .expectHeader().exists("Set-Cookie");
+                .expectStatus()
+                .isOk()
+                .expectHeader()
+                .exists("Set-Cookie");
     }
 
     @Test
     @DisplayName("login - JWT cookie has expected security attributes")
-    void login_JwtCookieContract_IsCorrect() {
+    void loginJwtCookieContractIsCorrect() {
         String email = uniqueEmail();
         registerAndVerify(email);
 
@@ -181,31 +211,38 @@ class AuthenticationControllerIT extends IntegrationTestBase {
 
     @Test
     @DisplayName("login - unverified account returns 4xx")
-    void login_UnverifiedAccount_Returns4xx() throws Exception {
+    void loginUnverifiedAccountReturns4xx() throws Exception {
         String email = uniqueEmail();
         doRegister(email);
 
-        webTestClient.post()
+        webTestClient
+                .post()
                 .uri(BASE + "/login")
                 .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue("""
+                .bodyValue(
+                        """
                         {"username": "%s", "password": "%s"}
-                        """.formatted(email, PASSWORD))
+                        """
+                                .formatted(email, PASSWORD))
                 .exchange()
-                .expectStatus().is4xxClientError();
+                .expectStatus()
+                .is4xxClientError();
     }
 
     @Test
     @DisplayName("login - wrong credentials return 4xx")
-    void login_WrongCredentials_Returns4xx() {
-        webTestClient.post()
+    void loginWrongCredentialsReturns4xx() {
+        webTestClient
+                .post()
                 .uri(BASE + "/login")
                 .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue("""
+                .bodyValue(
+                        """
                         {"username": "nobody@example.com", "password": "WrongPass1@"}
                         """)
                 .exchange()
-                .expectStatus().is4xxClientError();
+                .expectStatus()
+                .is4xxClientError();
     }
 
     // -------------------------------------------------------------------------
@@ -214,23 +251,22 @@ class AuthenticationControllerIT extends IntegrationTestBase {
 
     @Test
     @DisplayName("refresh-code - immediately after registration returns 400 due to cooldown")
-    void refreshCode_TooSoon_Returns400() {
+    void refreshCodeTooSoonReturns400() {
         String email = uniqueEmail();
         String userId = doRegister(email);
 
-        webTestClient.get()
+        webTestClient
+                .get()
                 .uri(BASE + "/refresh-code?userId=" + userId)
                 .exchange()
-                .expectStatus().isBadRequest();
+                .expectStatus()
+                .isBadRequest();
     }
 
     @Test
     @DisplayName("refresh-code - without auth and without userId returns 400")
-    void refreshCode_WithoutAuthAndWithoutUserId_Returns400() {
-        webTestClient.get()
-                .uri(BASE + "/refresh-code")
-                .exchange()
-                .expectStatus().isBadRequest();
+    void refreshCodeWithoutAuthAndWithoutUserIdReturns400() {
+        webTestClient.get().uri(BASE + "/refresh-code").exchange().expectStatus().isBadRequest();
     }
 
     // -------------------------------------------------------------------------
@@ -239,28 +275,29 @@ class AuthenticationControllerIT extends IntegrationTestBase {
 
     @Test
     @DisplayName("logout - without JWT cookie returns 401")
-    void logout_WithoutJwtCookie_Returns401() {
-        webTestClient.post()
-                .uri(BASE + "/logout")
-                .exchange()
-                .expectStatus().isUnauthorized();
+    void logoutWithoutJwtCookieReturns401() {
+        webTestClient.post().uri(BASE + "/logout").exchange().expectStatus().isUnauthorized();
     }
 
     @Test
     @DisplayName("logout - authenticated user returns 204 and clears JWT cookie")
-    void logout_AuthenticatedUser_Returns204AndClearsCookie() {
+    void logoutAuthenticatedUserReturns204AndClearsCookie() {
         String email = uniqueEmail();
         registerAndVerify(email);
         ResponseCookie jwtCookie = loginAndGetJwtCookie(email);
 
-        EntityExchangeResult<byte[]> result = webTestClient.post()
-                .uri(BASE + "/logout")
-                .cookie("jwt", jwtCookie.getValue())
-                .exchange()
-                .expectStatus().isNoContent()
-                .expectCookie().exists("jwt")
-                .expectBody()
-                .returnResult();
+        EntityExchangeResult<byte[]> result =
+                webTestClient
+                        .post()
+                        .uri(BASE + "/logout")
+                        .cookie("jwt", jwtCookie.getValue())
+                        .exchange()
+                        .expectStatus()
+                        .isNoContent()
+                        .expectCookie()
+                        .exists("jwt")
+                        .expectBody()
+                        .returnResult();
 
         ResponseCookie clearedCookie = result.getResponseCookies().getFirst("jwt");
         assertNotNull(clearedCookie, "JWT cookie should be present in logout response");
@@ -269,51 +306,63 @@ class AuthenticationControllerIT extends IntegrationTestBase {
         assertEquals("/", clearedCookie.getPath());
         assertEquals(0, clearedCookie.getMaxAge().getSeconds());
 
-        webTestClient.get()
+        webTestClient
+                .get()
                 .uri("/user")
                 .cookie("jwt", jwtCookie.getValue())
                 .exchange()
-                .expectStatus().isUnauthorized();
+                .expectStatus()
+                .isUnauthorized();
     }
 
     @Test
     @DisplayName("logout - revoking one session does not revoke another session")
-    void logout_OneSessionDoesNotRevokeAnotherSession() {
+    void logoutOneSessionDoesNotRevokeAnotherSession() {
         String email = uniqueEmail();
         registerAndVerify(email);
 
         ResponseCookie firstSession = loginAndGetJwtCookie(email);
         ResponseCookie secondSession = loginAndGetJwtCookie(email);
 
-        webTestClient.get()
+        webTestClient
+                .get()
                 .uri("/user")
                 .cookie("jwt", firstSession.getValue())
                 .exchange()
-                .expectStatus().isOk();
+                .expectStatus()
+                .isOk();
 
-        webTestClient.get()
+        webTestClient
+                .get()
                 .uri("/user")
                 .cookie("jwt", secondSession.getValue())
                 .exchange()
-                .expectStatus().isOk();
+                .expectStatus()
+                .isOk();
 
-        webTestClient.post()
+        webTestClient
+                .post()
                 .uri(BASE + "/logout")
                 .cookie("jwt", firstSession.getValue())
                 .exchange()
-                .expectStatus().isNoContent();
+                .expectStatus()
+                .isNoContent();
 
-        webTestClient.get()
+        webTestClient
+                .get()
                 .uri("/user")
                 .cookie("jwt", firstSession.getValue())
                 .exchange()
-                .expectStatus().isUnauthorized();
+                .expectStatus()
+                .isUnauthorized();
 
-        webTestClient.get()
+        webTestClient
+                .get()
                 .uri("/user")
                 .cookie("jwt", secondSession.getValue())
                 .exchange()
-                .expectStatus().isOk();
+                .expectStatus()
+                .isOk();
     }
 
     // -------------------------------------------------------------------------
@@ -322,77 +371,86 @@ class AuthenticationControllerIT extends IntegrationTestBase {
 
     @Test
     @DisplayName("protected endpoint - without JWT cookie returns 401")
-    void protectedEndpoint_WithoutJwtCookie_Returns401() {
-        webTestClient.get()
-                .uri("/user")
-                .exchange()
-                .expectStatus().isUnauthorized();
+    void protectedEndpointWithoutJwtCookieReturns401() {
+        webTestClient.get().uri("/user").exchange().expectStatus().isUnauthorized();
     }
 
     @Test
     @DisplayName("protected endpoint - valid JWT cookie returns 200 with profile")
-    void protectedEndpoint_WithValidJwtCookie_Returns200() {
+    void protectedEndpointWithValidJwtCookieReturns200() {
         String email = uniqueEmail();
         registerAndVerify(email);
         ResponseCookie jwtCookie = loginAndGetJwtCookie(email);
 
-        webTestClient.get()
+        webTestClient
+                .get()
                 .uri("/user")
                 .cookie("jwt", jwtCookie.getValue())
                 .exchange()
-                .expectStatus().isOk()
+                .expectStatus()
+                .isOk()
                 .expectBody()
-                .jsonPath("$.user.email").isEqualTo(email);
+                .jsonPath("$.user.email")
+                .isEqualTo(email);
     }
 
     @Test
     @DisplayName("protected endpoint - wrong cookie name returns 401")
-    void protectedEndpoint_WrongCookieName_Returns401() {
+    void protectedEndpointWrongCookieNameReturns401() {
         String email = uniqueEmail();
         registerAndVerify(email);
         ResponseCookie jwtCookie = loginAndGetJwtCookie(email);
 
-        webTestClient.get()
+        webTestClient
+                .get()
                 .uri("/user")
                 .cookie("JWT", jwtCookie.getValue())
                 .exchange()
-                .expectStatus().isUnauthorized();
+                .expectStatus()
+                .isUnauthorized();
     }
 
     @Test
     @DisplayName("protected endpoint - tampered JWT returns 401")
-    void protectedEndpoint_TamperedJwt_Returns401() {
+    void protectedEndpointTamperedJwtReturns401() {
         String email = uniqueEmail();
         registerAndVerify(email);
         ResponseCookie jwtCookie = loginAndGetJwtCookie(email);
         String tamperedJwt = tamperToken(jwtCookie.getValue());
 
-        webTestClient.get()
+        webTestClient
+                .get()
                 .uri("/user")
                 .cookie("jwt", tamperedJwt)
                 .exchange()
-                .expectStatus().isUnauthorized();
+                .expectStatus()
+                .isUnauthorized();
     }
 
     @Test
-    @DisplayName("protected endpoint - valid JWT for deleted user returns 500 with not-found detail")
-    void protectedEndpoint_DeletedUserWithStillValidJwt_Returns500WithNotFoundDetail() {
+    @DisplayName(
+            "protected endpoint - valid JWT for deleted user returns 500 with not-found detail")
+    void protectedEndpointDeletedUserWithStillValidJwtReturns500WithNotFoundDetail() {
         String email = uniqueEmail();
         registerAndVerify(email);
         ResponseCookie jwtCookie = loginAndGetJwtCookie(email);
 
-        webTestClient.delete()
+        webTestClient
+                .delete()
                 .uri("/user")
                 .cookie("jwt", jwtCookie.getValue())
                 .exchange()
-                .expectStatus().isNoContent();
+                .expectStatus()
+                .isNoContent();
 
         // The JWT is still structurally valid but resolver cannot load profile anymore.
-        webTestClient.get()
+        webTestClient
+                .get()
                 .uri("/user")
                 .cookie("jwt", jwtCookie.getValue())
                 .exchange()
-                .expectStatus().is5xxServerError()
+                .expectStatus()
+                .is5xxServerError()
                 .expectBody(String.class)
                 .value(error -> assertTrue(error.contains("Profile not found for user ID")));
     }
@@ -403,54 +461,64 @@ class AuthenticationControllerIT extends IntegrationTestBase {
 
     @Test
     @DisplayName("verify-code - without auth and without userId returns 400")
-    void verifyCode_WithoutAuthAndWithoutUserId_Returns400() {
-        webTestClient.post()
+    void verifyCodeWithoutAuthAndWithoutUserIdReturns400() {
+        webTestClient
+                .post()
                 .uri(BASE + "/verify-code")
                 .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue("""
+                .bodyValue(
+                        """
                         {"code": "123456"}
                         """)
                 .exchange()
-                .expectStatus().isBadRequest();
+                .expectStatus()
+                .isBadRequest();
     }
 
     // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
 
-    /**
-     * Registers a user and returns its userId.
-     */
+    /** Registers a user and returns its userId. */
     private String doRegister(String email) {
         String[] userId = new String[1];
-        webTestClient.post()
+        webTestClient
+                .post()
                 .uri(BASE + "/register")
                 .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue("""
+                .bodyValue(
+                        """
                         {"username": "%s", "password": "%s", "confirmPassword": "%s"}
-                        """.formatted(email, PASSWORD, PASSWORD))
+                        """
+                                .formatted(email, PASSWORD, PASSWORD))
                 .exchange()
-                .expectStatus().isCreated()
+                .expectStatus()
+                .isCreated()
                 .expectBody()
-                .jsonPath("$.userId").value(id -> userId[0] = (String) id);
+                .jsonPath("$.userId")
+                .value(id -> userId[0] = (String) id);
         return userId[0];
     }
 
-    /**
-     * Logs in and returns the JWT response cookie.
-     */
+    /** Logs in and returns the JWT response cookie. */
     private ResponseCookie loginAndGetJwtCookie(String email) {
-        EntityExchangeResult<byte[]> result = webTestClient.post()
-                .uri(BASE + "/login")
-                .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue("""
+        EntityExchangeResult<byte[]> result =
+                webTestClient
+                        .post()
+                        .uri(BASE + "/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .bodyValue(
+                                """
                         {"username": "%s", "password": "%s"}
-                        """.formatted(email, PASSWORD))
-                .exchange()
-                .expectStatus().isOk()
-                .expectCookie().exists("jwt")
-                .expectBody()
-                .returnResult();
+                        """
+                                        .formatted(email, PASSWORD))
+                        .exchange()
+                        .expectStatus()
+                        .isOk()
+                        .expectCookie()
+                        .exists("jwt")
+                        .expectBody()
+                        .returnResult();
 
         ResponseCookie jwtCookie = result.getResponseCookies().getFirst("jwt");
         assertNotNull(jwtCookie, "JWT cookie should be present after login");
@@ -467,23 +535,27 @@ class AuthenticationControllerIT extends IntegrationTestBase {
     }
 
     /**
-     * Registers a user, reads the email, and verifies the code.
-     * Returns the already active userId.
+     * Registers a user, reads the email, and verifies the code. Returns the already active userId.
      */
     private String registerAndVerify(String email) {
         try {
             // 1. Register
             String[] userId = new String[1];
-            webTestClient.post()
+            webTestClient
+                    .post()
                     .uri(BASE + "/register")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .bodyValue("""
+                    .bodyValue(
+                            """
                             {"username": "%s", "password": "%s", "confirmPassword": "%s"}
-                            """.formatted(email, PASSWORD, PASSWORD))
+                            """
+                                    .formatted(email, PASSWORD, PASSWORD))
                     .exchange()
-                    .expectStatus().isCreated()
+                    .expectStatus()
+                    .isCreated()
                     .expectBody()
-                    .jsonPath("$.userId").value(id -> userId[0] = (String) id);
+                    .jsonPath("$.userId")
+                    .value(id -> userId[0] = (String) id);
 
             // 2. Read code from email
             String emailBody = mailpit.waitForEmailBody(email, 10_000);
@@ -491,14 +563,18 @@ class AuthenticationControllerIT extends IntegrationTestBase {
             mailpit.deleteAllMessages();
 
             // 3. Verify
-            webTestClient.post()
+            webTestClient
+                    .post()
                     .uri(BASE + "/verify-code")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .bodyValue("""
+                    .bodyValue(
+                            """
                             {"userId": "%s", "code": "%s"}
-                            """.formatted(userId[0], code))
+                            """
+                                    .formatted(userId[0], code))
                     .exchange()
-                    .expectStatus().isCreated();
+                    .expectStatus()
+                    .isCreated();
 
             return userId[0];
         } catch (Exception e) {

@@ -1,49 +1,44 @@
 package org.efrenjm.investingtracker.domain.model.wallet;
 
-import lombok.*;
+import java.util.HashSet;
+import java.util.Set;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 import org.efrenjm.investingtracker.domain.model.AuditableModel;
 import org.efrenjm.investingtracker.domain.model.wallet.exceptions.MemberAlreadyInRoleException;
 import org.efrenjm.investingtracker.domain.model.wallet.exceptions.MemberNotInRoleException;
-
-import java.util.HashSet;
-import java.util.Set;
 
 @AllArgsConstructor
 @Builder
 @Getter
 @Setter
 @ToString
-public class Role extends AuditableModel
-{
+public class Role extends AuditableModel {
     private String description;
 
     private Permissions permissions;
 
-    @Builder.Default
-    private Set<String> members = new HashSet<>();
+    @Builder.Default private Set<String> members = new HashSet<>();
 
-    public void addMember(String member)
-    {
-        if (members == null)
-        {
+    public void addMember(String member) {
+        if (members == null) {
             members = new HashSet<>();
         }
-        if (members.contains(member))
-        {
+        if (members.contains(member)) {
             throw new MemberAlreadyInRoleException(member);
         }
         members.add(member);
     }
 
-    public void removeMember(String member)
-    {
-        if (members == null)
-        {
+    public void removeMember(String member) {
+        if (members == null) {
             members = new HashSet<>();
         }
-        if (!members.contains(member))
-        {
+        if (!members.contains(member)) {
             throw new MemberNotInRoleException(member);
         }
         members.remove(member);
@@ -53,8 +48,7 @@ public class Role extends AuditableModel
     @Getter
     @Setter
     @ToString
-    public static class Permissions
-    {
+    public static class Permissions {
         private CRUDPermissions accounts;
         private CRUDPermissions transactions;
         private CRUDPermissions rules;
@@ -66,8 +60,7 @@ public class Role extends AuditableModel
         @Getter
         @Setter
         @ToString
-        public static class RUDPermissions
-        {
+        public static class RUDPermissions {
             private boolean view;
             private boolean edit;
             private boolean remove;
@@ -77,8 +70,7 @@ public class Role extends AuditableModel
         @Setter
         @ToString
         @SuperBuilder
-        public static class CRUDPermissions extends RUDPermissions
-        {
+        public static class CRUDPermissions extends RUDPermissions {
             private boolean add;
         }
     }

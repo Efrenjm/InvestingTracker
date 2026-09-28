@@ -1,0 +1,52 @@
+def luaSources = fileTree('src') {
+    include '**/*.lua'
+    exclude '**/generated/**'
+}
+def hasLua = { !luaSources.isEmpty() }
+
+tasks.register('verifyStyLua') {
+    group = 'verification'
+    onlyIf('Lua sources are present') { hasLua() }
+    doLast {
+        def versionOutput = new ByteArrayOutputStream()
+        exec {
+            commandLine 'stylua', '--version'
+            standardOutput = versionOutput
+        }
+        if (versionOutput.toString('UTF-8').trim() != 'stylua 2.5.2') {
+            throw new GradleException('StyLua 2.5.2 is required; see docs/DEVELOPMENT.md.')
+        }
+    }
+}
+
+tasks.register('formatLua', Exec) {
+    group = 'formatting'
+    dependsOn 'verifyStyLua'
+    onlyIf('Lua sources are present') { hasLua() }
+    doFirst {
+        commandLine(['stylua', '--config-path', file('stylua.toml').absolutePath,
+                     '--verify'] + luaSources.files.collect { it.absolutePath }.sort())
+    }
+}
+
+tasks.register('checkLua', Exec) {
+    group = 'verification'
+    dependsOn 'verifyStyLua'
+    onlyIf('Lua sources are present') { hasLua() }
+    doFirst {
+        commandLine(['stylua', '--config-path', file('stylua.toml').absolutePath,
+                     '--check'] + luaSources.files.collect { it.absolutePath }.sort())
+    }
+}
+
+tasks.register('format') {
+    group = 'formatting'
+    dependsOn 'spotlessApply', 'formatLua'
+}
+
+tasks.register('formatCheck') {
+    group = 'verification'
+    dependsOn 'spotlessCheck', 'checkLua'
+}
+
+tasks.named('check') { dependsOn 'formatCheck' }

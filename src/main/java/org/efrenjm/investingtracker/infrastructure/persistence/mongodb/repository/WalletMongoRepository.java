@@ -9,5 +9,5 @@ import reactor.core.publisher.Flux;
 
 @Repository
 public interface WalletMongoRepository extends ReactiveMongoRepository<WalletEntity, ObjectId> {
-	Flux<WalletEntity> findByVisibility(Visibility visibility);
+    Flux<WalletEntity> findByVisibility(Visibility visibility);
 }

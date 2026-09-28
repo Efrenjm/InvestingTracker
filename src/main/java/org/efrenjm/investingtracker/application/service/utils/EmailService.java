@@ -7,13 +7,12 @@ import reactor.core.publisher.Mono;
 
 @Service
 @RequiredArgsConstructor
-public class EmailService implements EmailPort
-{
-	private final org.efrenjm.investingtracker.domain.ports.outbound.utils.EmailPort emailPort;
+public class EmailService implements EmailPort {
+    private final org.efrenjm.investingtracker.domain.ports.outbound.utils.EmailPort emailPort;
 
-	public Mono<Void> sendVerificationEmail(String email, String verificationToken) {
-		String subject = "Please verify your email address";
-		String body = "Use the following code to verify your email: " + verificationToken;
-		return emailPort.sendEmail(email, subject, body);
-	}
+    public Mono<Void> sendVerificationEmail(String email, String verificationToken) {
+        String subject = "Please verify your email address";
+        String body = "Use the following code to verify your email: " + verificationToken;
+        return emailPort.sendEmail(email, subject, body);
+    }
 }

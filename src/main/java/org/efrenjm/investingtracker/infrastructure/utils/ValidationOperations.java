@@ -9,20 +9,22 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class ValidationOperations implements ValidationPort {
-	@Override
-	public boolean isValidEmail(String possibleEmail) {
-		return EmailValidator.getInstance().isValid(possibleEmail);
-	}
+    @Override
+    public boolean isValidEmail(String possibleEmail) {
+        return EmailValidator.getInstance().isValid(possibleEmail);
+    }
 
-	@Override
-	public boolean isValidPhone(String possiblePhone) {
-		PhoneNumberUtil phoneNumberUtil = PhoneNumberUtil.getInstance();
-		try {
-			Phonenumber.PhoneNumber phone = phoneNumberUtil.parse(possiblePhone,
-					Phonenumber.PhoneNumber.CountryCodeSource.UNSPECIFIED.name());
-			return phoneNumberUtil.isValidNumber(phone);
-		} catch (NumberParseException e) {
-			return false;
-		}
-	}
+    @Override
+    public boolean isValidPhone(String possiblePhone) {
+        PhoneNumberUtil phoneNumberUtil = PhoneNumberUtil.getInstance();
+        try {
+            Phonenumber.PhoneNumber phone =
+                    phoneNumberUtil.parse(
+                            possiblePhone,
+                            Phonenumber.PhoneNumber.CountryCodeSource.UNSPECIFIED.name());
+            return phoneNumberUtil.isValidNumber(phone);
+        } catch (NumberParseException e) {
+            return false;
+        }
+    }
 }

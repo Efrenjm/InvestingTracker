@@ -1,6 +1,10 @@
 package org.efrenjm.investingtracker.domain.model;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 
 @AllArgsConstructor
@@ -9,9 +13,8 @@ import lombok.experimental.SuperBuilder;
 @Getter
 @Setter
 @ToString
-public abstract class AuditableModel extends BaseModel
-{
-	protected String createdBy;
+public abstract class AuditableModel extends BaseModel {
+    protected String createdBy;
 
-	protected String updatedBy;
+    protected String updatedBy;
 }

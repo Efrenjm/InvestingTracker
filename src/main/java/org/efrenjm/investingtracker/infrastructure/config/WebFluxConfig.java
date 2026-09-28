@@ -9,10 +9,10 @@ import org.springframework.web.reactive.result.method.annotation.ArgumentResolve
 @Configuration
 @RequiredArgsConstructor
 public class WebFluxConfig implements WebFluxConfigurer {
-	private final UserLookupUseCase userLookupUseCase;
+    private final UserLookupUseCase userLookupUseCase;
 
-	@Override
-	public void configureArgumentResolvers(ArgumentResolverConfigurer configurer) {
-		configurer.addCustomResolver(new AuthUserResolver(userLookupUseCase));
-	}
+    @Override
+    public void configureArgumentResolvers(ArgumentResolverConfigurer configurer) {
+        configurer.addCustomResolver(new AuthUserResolver(userLookupUseCase));
+    }
 }

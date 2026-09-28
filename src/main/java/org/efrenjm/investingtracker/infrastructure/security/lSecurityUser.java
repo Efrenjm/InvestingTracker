@@ -1,23 +1,23 @@
-//package org.efrenjm.investingtracker.infrastructure.security;
+// package org.efrenjm.investingtracker.infrastructure.security;
 //
-//import com.fasterxml.jackson.annotation.JsonIgnore;
-//import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-//import com.fasterxml.jackson.annotation.JsonInclude;
-//import com.fasterxml.jackson.annotation.JsonProperty;
-//import lombok.NoArgsConstructor;
-//import lombok.RequiredArgsConstructor;
-//import org.efrenjm.investingtracker.domain.model.user.User;
-//import org.springframework.security.core.GrantedAuthority;
-//import org.springframework.security.core.userdetails.UserDetails;
+// import com.fasterxml.jackson.annotation.JsonIgnore;
+// import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+// import com.fasterxml.jackson.annotation.JsonInclude;
+// import com.fasterxml.jackson.annotation.JsonProperty;
+// import lombok.NoArgsConstructor;
+// import lombok.RequiredArgsConstructor;
+// import org.efrenjm.investingtracker.domain.model.user.User;
+// import org.springframework.security.core.GrantedAuthority;
+// import org.springframework.security.core.userdetails.UserDetails;
 //
-//import java.util.Collection;
-//import java.util.List;
+// import java.util.Collection;
+// import java.util.List;
 //
-//@JsonInclude(JsonInclude.Include.NON_NULL)
-//@JsonIgnoreProperties(ignoreUnknown = true)
-//@RequiredArgsConstructor
-//@NoArgsConstructor(force = true)
-//public class SecurityUser implements UserDetails {
+// @JsonInclude(JsonInclude.Include.NON_NULL)
+// @JsonIgnoreProperties(ignoreUnknown = true)
+// @RequiredArgsConstructor
+// @NoArgsConstructor(force = true)
+// public class SecurityUser implements UserDetails {
 //
 //
 //	@JsonProperty("coreUser")
@@ -96,4 +96,4 @@
 //	public User toDomain() {
 //		return user;
 //	}
-//}
+// }
